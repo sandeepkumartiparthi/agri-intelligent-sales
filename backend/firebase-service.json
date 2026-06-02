@@ -1,0 +1,7 @@
+{
+  "type": "service_account",
+  "project_id": "irsa-agri-project",
+  "private_key_id": "mock_key_id_12345",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC3\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk@irsa-agri-project.iam.gserviceaccount.com"
+}

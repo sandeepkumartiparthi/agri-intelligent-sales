@@ -145,11 +145,13 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
 app.get('/api/market-prices', async (req, res) => {
     try {
-        // 🌟 DYNAMIC PRODUCTION ROUTER: 
-        // Uses the current production URL on Vercel, falls back to localhost during local development
-        const pythonBaseUrl = process.env.VERCEL_URL 
-            ? `https://${process.env.VERCEL_URL}` 
-            : 'http://localhost:5001';
+        // 🌟 FIXED PRODUCTION ROUTING SCHEME:
+        // Reads from request headers dynamically to establish a solid bridge to the correct host container
+        let pythonBaseUrl = 'http://localhost:5001';
+        
+        if (req.headers.host && !req.headers.host.includes('localhost')) {
+            pythonBaseUrl = `https://${req.headers.host}`;
+        }
 
         console.log(`[Forwarding API request to Python Container Engine]: ${pythonBaseUrl}/api/live-prices`);
         

@@ -1,28 +1,27 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import torch
-import torch.nn as nn
-import numpy as np
 import random
 import datetime
-from scraper import fetch_live_ap_mandi_prices, fetch_any_random_crop_live_data
+import sys
+import os
+
+# 🌟 DYNAMIC IMPORT ROUTER: Works 200% perfectly on both Localhost and Vercel cloud servers
+try:
+    from scraper import fetch_live_ap_mandi_prices, fetch_any_random_crop_live_data
+except ModuleNotFoundError:
+    from ai_model.scraper import fetch_live_ap_mandi_prices, fetch_any_random_crop_live_data
 
 app = Flask(__name__)
 CORS(app)
 
-class CropPricingNN(nn.Module):
-    def __init__(self):
-        super(CropPricingNN, self).__init__()
-        self.linear = nn.Linear(3, 1)
-        with torch.no_grad():
-            self.linear.weight.fill_(0.14)
-            self.linear.bias.fill_(1.8)
-            
-    def forward(self, x):
-        return self.linear(x)
+# Replicating your PyTorch weights and bias perfectly
+WEIGHTS = 0.14
+BIAS = 1.8
 
-model = CropPricingNN()
-model.eval()
+def emulate_pytorch_linear_layer(base_price, day, crop_len):
+    """Computes the exact matrix multiplication of your PyTorch nn.Linear layer natively"""
+    total_input_sum = float(base_price) + float(day) + float(crop_len)
+    return (total_input_sum * WEIGHTS) + BIAS
 
 @app.route('/api/live-prices', methods=['GET'])
 def get_prices():
@@ -36,17 +35,17 @@ def predict_trends():
     if not crop_input:
         return jsonify({"success": False, "error": "Empty crop identifier"}), 400
 
-    # Dynamic lookup is now instant (O(1) complexity running directly from memory arrays)
+    # Dynamic memory array lookup
     live_crop_details = fetch_any_random_crop_live_data(crop_input)
     live_baseline_price = live_crop_details["price"]
 
     trend_sequence = [live_baseline_price]
     
     for day in range(1, 8):
-        with torch.no_grad():
-            input_tensor = torch.tensor([float(live_baseline_price), float(day), float(len(crop_input))], dtype=torch.float32)
-            raw_variance = model(input_tensor).item()
+        # 🎯 Calculates your exact PyTorch value mathematically (No heavy library needed!)
+        raw_variance = emulate_pytorch_linear_layer(live_baseline_price, day, len(crop_input))
         
+        # Matches your exact randomization seed loop logic perfectly
         random.seed(int(live_baseline_price) + day + len(crop_input))
         market_fluctuation = random.randint(-25, 35)
         variance = int(raw_variance * 10) + market_fluctuation if day != 4 else -130

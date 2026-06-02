@@ -1,7 +1,4 @@
---find-links https://download.pytorch.org/whl/cpu/torch_stable.html
 flask
 flask-cors
 requests
 beautifulsoup4
-numpy
-torch==2.2.1+cpu

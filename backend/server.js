@@ -145,12 +145,14 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
 app.get('/api/market-prices', async (req, res) => {
     try {
-        // 🌟 FIXED PRODUCTION ROUTING SCHEME:
-        // Reads from request headers dynamically to establish a solid bridge to the correct host container
+        // 🌟 FIXED VERCEL PROXY BRIDGE LAYER
+        // Serverless runtimes on Vercel require internal cross-route fetches to communicate relative to the environment's assigned active runtime address.
         let pythonBaseUrl = 'http://localhost:5001';
         
         if (req.headers.host && !req.headers.host.includes('localhost')) {
             pythonBaseUrl = `https://${req.headers.host}`;
+        } else if (process.env.VERCEL_URL) {
+            pythonBaseUrl = `https://${process.env.VERCEL_URL}`;
         }
 
         console.log(`[Forwarding API request to Python Container Engine]: ${pythonBaseUrl}/api/live-prices`);
@@ -163,4 +165,9 @@ app.get('/api/market-prices', async (req, res) => {
     }
 });
 
-app.listen(5000, () => console.log('🚀 SUCCESS: Standalone Engine Active. Polling structural pipelines on Port 5000.'));
+// Export app instance for seamless integration with Vercel's serverless pipeline routing handler
+module.exports = app;
+
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(5000, () => console.log('🚀 SUCCESS: Standalone Engine Active. Polling structural pipelines on Port 5000.'));
+}

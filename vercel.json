@@ -13,8 +13,9 @@
     { "src": "/api/listings(.*)", "dest": "backend/server.js" },
     { "src": "/api/admin/users(.*)", "dest": "backend/server.js" },
     { "src": "/api/market-prices", "dest": "backend/server.js" },
-    { "src": "/(.*)", "dest": "frontend/$1", "continue": true },
+    
     { "handle": "filesystem" },
-    { "src": "/[^.]*", "dest": "/frontend/index.html" }
+    
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

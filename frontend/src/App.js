@@ -25,10 +25,6 @@ export default function App() {
   // Timer ref holder for debouncing network calls
   const searchDebounceRef = useRef(null);
 
-  // 🌟 VERCEL MULTI-LANGUAGE RELATIVE PATH CONTEXT
-  const BACKEND_API_URL = ''; 
-  const AI_API_URL = '';
-
   useEffect(() => {
     fetchMarketPrices();
     fetchListings();
@@ -40,7 +36,8 @@ export default function App() {
 
   const fetchMarketPrices = async () => {
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/market-prices`);
+      // 🌟 FIXED: Absolute relative proxy routing mapping
+      const res = await fetch('/api/market-prices');
       const data = await res.json();
       setMarketPrices(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -60,7 +57,8 @@ export default function App() {
 
         if (!exactMatchExists) {
           try {
-            const res = await fetch(`${AI_API_URL}/api/forecast`, {
+            // 🌟 FIXED: Routed through the universal vercel proxy layout
+            const res = await fetch('/api/forecast', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ crop: queryText })
@@ -84,21 +82,24 @@ export default function App() {
 
   const fetchListings = async () => {
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/listings`);
+      // 🌟 FIXED: Dropped local machine targets
+      const res = await fetch('/api/listings');
       setListings(await res.json());
     } catch (e) { setListings([]); }
   };
 
   const fetchAdminUsers = async () => {
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/admin/users`);
+      // 🌟 FIXED: Clean unified pathing 
+      const res = await fetch('/api/admin/users');
       setAdminUsers(await res.json());
     } catch (e) { setAdminUsers([]); }
   };
 
   const generateForecast = async () => {
     try {
-      const res = await fetch(`${AI_API_URL}/api/forecast`, {
+      // 🌟 FIXED: Redirected to unified serverless python execution layer
+      const res = await fetch('/api/forecast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ crop: forecastCrop })
@@ -113,7 +114,8 @@ export default function App() {
     setAuthError('');
     const endpoint = isSignUp ? 'signup' : 'login';
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/auth/${endpoint}`, {
+      // 🌟 FIXED: Secure unified credential transmission gateway
+      const res = await fetch(`/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm)
@@ -153,7 +155,8 @@ export default function App() {
     e.preventDefault();
     if (!user) return;
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/listings`, {
+      // 🌟 FIXED: Direct pipeline array submission 
+      const res = await fetch('/api/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...farmerForm, farmerId: user.id, farmerName: user.name })
@@ -169,7 +172,7 @@ export default function App() {
   const deleteListing = async (id) => {
     if (!window.confirm("Confirm listing removal from cloud nodes?")) return;
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/listings/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/listings/${id}`, { method: 'DELETE' });
       if (res.ok) { fetchListings(); if (selectedListing && selectedListing._id === id) setSelectedListing(null); }
     } catch (e) {}
   };
@@ -177,7 +180,7 @@ export default function App() {
   const deleteUser = async (id) => {
     if (!window.confirm("Purge account index structure permanently?")) return;
     try {
-      const res = await fetch(`${BACKEND_API_URL}/api/admin/users/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
       if (res.ok) fetchAdminUsers();
     } catch (e) {}
   };
@@ -192,10 +195,7 @@ export default function App() {
 
       <nav className="glass-navbar">
         <div className="nav-container">
-          
-          {/* 🧬 CUSTOM HIGH-PERFORMANCE IRSA ECOSYSTEM DESIGN LOGO INTEGRATED */}
           <div className="brand-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* 🧬 CUSTOM HIGH-PERFORMANCE IRSA ECOSYSTEM DESIGN LOGO */}
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               viewBox="0 0 24 24" 
@@ -212,12 +212,9 @@ export default function App() {
                 animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
               }}
             >
-              {/* Central Core Analytics Node Axis */}
               <circle cx="12" cy="12" r="2.5" fill="#34d399" />
-              {/* Upward Bound Growth Logistics Vectors */}
               <path d="M12 2v7.5M12 14.5V22" />
               <path d="M5 12h4.5M14.5 12H19" />
-              {/* Outer Market Grid Intersect Points */}
               <path d="M18.4 5.6l-3.2 3.2M8.8 15.2l-3.2 3.2" />
               <path d="M5.6 5.6l3.2 3.2M15.2 15.2l3.2 3.2" />
             </svg>

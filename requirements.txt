@@ -3,5 +3,5 @@ flask==3.0.2
 flask-cors==4.0.0
 requests==2.31.0
 beautifulsoup4==4.12.3
-numpy==1.26.4 --no-binary numpy
+numpy==1.26.4
 torch==2.1.2+cpu

@@ -145,9 +145,20 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
 app.get('/api/market-prices', async (req, res) => {
     try {
-        const aiRes = await axios.get('http://localhost:5001/api/live-prices');
+        // 🌟 DYNAMIC PRODUCTION ROUTER: 
+        // Uses the current production URL on Vercel, falls back to localhost during local development
+        const pythonBaseUrl = process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : 'http://localhost:5001';
+
+        console.log(`[Forwarding API request to Python Container Engine]: ${pythonBaseUrl}/api/live-prices`);
+        
+        const aiRes = await axios.get(`${pythonBaseUrl}/api/live-prices`);
         res.json(aiRes.data);
-    } catch (err) { res.status(500).json([]); }
+    } catch (err) { 
+        console.error("Internal pricing transmission bridge failed:", err.message);
+        res.status(500).json([]); 
+    }
 });
 
 app.listen(5000, () => console.log('🚀 SUCCESS: Standalone Engine Active. Polling structural pipelines on Port 5000.'));

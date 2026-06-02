@@ -1,7 +1,7 @@
 --find-links https://download.pytorch.org/whl/cpu/torch_stable.html
-flask==3.0.2
-flask-cors==4.0.0
-requests==2.31.0
-beautifulsoup4==4.12.3
-numpy==1.26.4
-torch==2.1.2+cpu
+flask
+flask-cors
+requests
+beautifulsoup4
+numpy
+torch==2.2.1+cpu

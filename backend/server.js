@@ -5,6 +5,10 @@ const path = require('path');
 
 const app = express();
 
+// 🌟 FIX: Bind the port INSTANTLY so Render's port scanner hooks in immediately!
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Master Server Live on Port ${PORT}`));
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -205,9 +209,5 @@ app.use(express.static(path.join(__dirname, '../frontend/build')));
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
-
-// Bind to physical environment port variable dynamically designated by Render
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Master Server Live on Port ${PORT}`));
 
 module.exports = app;

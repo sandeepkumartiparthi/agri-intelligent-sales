@@ -16,6 +16,7 @@
     
     { "handle": "filesystem" },
     
-    { "src": "/(.*)", "dest": "/frontend/$1" }
+    { "src": "/static/(.*)", "dest": "/frontend/build/static/$1" },
+    { "src": "/(.*)", "dest": "/frontend/build/index.html" }
   ]
 }

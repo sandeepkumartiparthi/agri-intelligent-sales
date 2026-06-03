@@ -2,20 +2,19 @@
   "version": 2,
   "builds": [
     { "src": "backend/server.js", "use": "@vercel/node" },
-    { "src": "ai_model/app.py", "use": "@vercel/python" },
     { "src": "frontend/package.json", "use": "@vercel/static-build", "config": { "distDir": "build" } }
   ],
   "routes": [
-    { "src": "/api/live-prices", "dest": "ai_model/app.py" },
-    { "src": "/api/forecast", "dest": "ai_model/app.py" },
     { "src": "/api/auth/signup", "dest": "backend/server.js" },
     { "src": "/api/auth/login", "dest": "backend/server.js" },
     { "src": "/api/listings(.*)", "dest": "backend/server.js" },
     { "src": "/api/admin/users(.*)", "dest": "backend/server.js" },
     { "src": "/api/market-prices", "dest": "backend/server.js" },
+    { "src": "/api/forecast", "dest": "backend/server.js" },
     
     { "handle": "filesystem" },
     
-    { "src": "/(.*)", "dest": "frontend/$1" }
+    { "src": "/static/(.*)", "dest": "frontend/build/static/$1" },
+    { "src": "/(.*)", "dest": "frontend/build/index.html" }
   ]
 }

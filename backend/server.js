@@ -145,8 +145,6 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
 app.get('/api/market-prices', async (req, res) => {
     try {
-        // 🌟 FIXED VERCEL PROXY BRIDGE LAYER
-        // Serverless runtimes on Vercel require internal cross-route fetches to communicate relative to the environment's assigned active runtime address.
         let pythonBaseUrl = 'http://localhost:5001';
         
         if (req.headers.host && !req.headers.host.includes('localhost')) {
@@ -156,7 +154,6 @@ app.get('/api/market-prices', async (req, res) => {
         }
 
         console.log(`[Forwarding API request to Python Container Engine]: ${pythonBaseUrl}/api/live-prices`);
-        
         const aiRes = await axios.get(`${pythonBaseUrl}/api/live-prices`);
         res.json(aiRes.data);
     } catch (err) { 
@@ -165,7 +162,7 @@ app.get('/api/market-prices', async (req, res) => {
     }
 });
 
-// Export app instance for seamless integration with Vercel's serverless pipeline routing handler
+// Export app instance for serverless runtime usage on Vercel
 module.exports = app;
 
 if (process.env.NODE_ENV !== 'production') {

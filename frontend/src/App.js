@@ -36,7 +36,6 @@ export default function App() {
 
   const fetchMarketPrices = async () => {
     try {
-      // 🌟 FIXED: Absolute relative proxy routing mapping
       const res = await fetch('/api/market-prices');
       const data = await res.json();
       setMarketPrices(Array.isArray(data) ? data : []);
@@ -57,7 +56,6 @@ export default function App() {
 
         if (!exactMatchExists) {
           try {
-            // 🌟 FIXED: Routed through the universal vercel proxy layout
             const res = await fetch('/api/forecast', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -82,7 +80,6 @@ export default function App() {
 
   const fetchListings = async () => {
     try {
-      // 🌟 FIXED: Dropped local machine targets
       const res = await fetch('/api/listings');
       setListings(await res.json());
     } catch (e) { setListings([]); }
@@ -90,7 +87,6 @@ export default function App() {
 
   const fetchAdminUsers = async () => {
     try {
-      // 🌟 FIXED: Clean unified pathing 
       const res = await fetch('/api/admin/users');
       setAdminUsers(await res.json());
     } catch (e) { setAdminUsers([]); }
@@ -98,7 +94,6 @@ export default function App() {
 
   const generateForecast = async () => {
     try {
-      // 🌟 FIXED: Redirected to unified serverless python execution layer
       const res = await fetch('/api/forecast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,7 +109,6 @@ export default function App() {
     setAuthError('');
     const endpoint = isSignUp ? 'signup' : 'login';
     try {
-      // 🌟 FIXED: Secure unified credential transmission gateway
       const res = await fetch(`/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,7 +149,6 @@ export default function App() {
     e.preventDefault();
     if (!user) return;
     try {
-      // 🌟 FIXED: Direct pipeline array submission 
       const res = await fetch('/api/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

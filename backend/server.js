@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
 
 const app = express();
 
@@ -139,11 +140,9 @@ app.post('/api/forecast', async (req, res) => {
     const cropQuery = req.body.crop || "Paddy";
     const cropKey = String(cropQuery).toLowerCase().trim().replace(/ /g, "").replace(/\(/g, "").replace(/\)/g, "");
     
-    // 🌟 FAST-PATH CACHE CHECK: Strict O(1) Complexity execution loop
     if (COMMODITY_CACHE_MAP.has(cropKey)) {
         const cachedItem = COMMODITY_CACHE_MAP.get(cropKey);
         
-        // Build predictive time-series arrays using your exact formula logic
         const trend = [];
         let rPrice = cachedItem.price;
         for (let d = 1; d <= 7; d++) {
@@ -153,7 +152,6 @@ app.post('/api/forecast', async (req, res) => {
             trend.push(rPrice);
         }
         
-        // 🌟 STRUCTURAL ALIGNMENT: Returns both 'price' and 'basePrice' keys cleanly
         return res.json({ 
             ...cachedItem, 
             price: cachedItem.price,
@@ -164,10 +162,8 @@ app.post('/api/forecast', async (req, res) => {
         });
     }
 
-    // 🌟 SLOW-PATH CACHE MISS: Spin up background crawler thread safely
     triggerBackgroundScrapePoller(cropQuery, cropKey);
 
-    // Flawless Javascript re-implementation of your Step 2 Scraper equation to prevent page freezes
     const charSum = [...cropKey].reduce((sum, char) => sum + char.charCodeAt(0), 0);
     const calculatedBaseFactor = Math.max(16.0, (charSum % 76) + 18.2);
     const computedLivePrice = Math.floor(calculatedBaseFactor * GLOBAL_FX_INDICATOR);
@@ -193,20 +189,25 @@ app.post('/api/forecast', async (req, res) => {
     const dynamicResponseDoc = {
         crop: cropQuery.charAt(0).toUpperCase() + cropQuery.slice(1),
         price: finalLivePrice,
-        basePrice: finalLivePrice, // Double-mapped field resolves React extraction criteria safely
+        basePrice: finalLivePrice,
         mandi: assignedMandi,
         source: designatedSource,
         timestamp: new Date().toLocaleString(),
         forecastDays: trendSequence
     };
 
-    // Stash entry inside cache immediately to drop response complexity to O(1) for successive requests
     COMMODITY_CACHE_MAP.set(cropKey, dynamicResponseDoc);
     res.json(dynamicResponseDoc);
 });
 
-module.exports = app;
+// 🌟 HARD-LINK RE-ROUTING SCHEME TO PHYSICALLY SERVE THE FRONTEND
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(5001, () => console.log('🚀 Local dev node active on Port 5001.'));
-}
+// Bind to physical environment port variable dynamically designated by Render
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Master Server Live on Port ${PORT}`));
+
+module.exports = app;

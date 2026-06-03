@@ -207,8 +207,8 @@ app.post('/api/forecast', async (req, res) => {
 // 🌟 HARD-LINK RE-ROUTING SCHEME TO PHYSICALLY SERVE THE FRONTEND
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 
-// 🌟 FIX: Express 5 Strict Named Wildcard routing format eliminates path-to-regexp crashes
-app.get('/:any*', (req, res) => {
+// Pure regex literal overrides Express 5 string-parsing engines completely
+app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
 

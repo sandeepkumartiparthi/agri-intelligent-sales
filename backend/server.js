@@ -8,6 +8,9 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// 🌐 INTEGRATED RENDER PYTHON LIVE CORE ROUTE
+const RENDER_PYTHON_URL = "https://agri-intelligent-sales.onrender.com";
+
 // --- 🧠 HIGH-PERFORMANCE IN-MEMORY CACHE SHARDS ---
 let COMMODITY_CACHE_MAP = new Map();
 let LOCAL_USER_DATABASE = [];
@@ -205,5 +208,5 @@ app.post('/api/forecast', async (req, res) => {
 module.exports = app;
 
 if (process.env.NODE_ENV !== 'production') {
-    app.listen(5000, () => console.log('🚀 Standalone node active on Port 5000.'));
+    app.listen(5001, () => console.log('🚀 Local dev node active on Port 5001.'));
 }

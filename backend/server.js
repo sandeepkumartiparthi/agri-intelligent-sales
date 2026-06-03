@@ -84,7 +84,6 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
 // --- 🚀 ASYNCHRONOUS BACKGROUND WEB SCRAPER INJECTOR ---
 const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
-    // Non-blocking worker function prevents page freezes
     setImmediate(async () => {
         try {
             const url = "https://agmarknet.gov.in/SearchHome/Searchalldata.aspx?Tx_Market=0&Tx_State=AP&Tx_District=0&Tx_Commodity=0&Tx_Today=1";
@@ -105,7 +104,6 @@ const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
                         const scrapedCrop = clean(cols[3]);
                         const scrapedKey = scrapedCrop.toLowerCase().replace(/ /g, "").replace(/\(/g, "").replace(/\)/g, "");
                         
-                        // If live match found on server sheets, update memory space immediately
                         if (scrapedKey.includes(cropKey) || cropKey.includes(scrapedKey)) {
                             COMMODITY_CACHE_MAP.set(scrapedKey, {
                                 crop: scrapedCrop,
@@ -151,7 +149,16 @@ app.post('/api/forecast', async (req, res) => {
             rPrice = Math.max(800, Math.floor((d !== 4) ? (rPrice + v) : (rPrice - 130)));
             trend.push(rPrice);
         }
-        return res.json({ ...cachedItem, source: `${cachedItem.source} (Cache)`, forecastDays: trend });
+        
+        // 🌟 STRUCTURAL ALIGNMENT: Returns both 'price' and 'basePrice' keys cleanly
+        return res.json({ 
+            ...cachedItem, 
+            price: cachedItem.price,
+            basePrice: cachedItem.price, 
+            source: `${cachedItem.source} (Cache)`, 
+            timestamp: cachedItem.date || new Date().toLocaleString(),
+            forecastDays: trend 
+        });
     }
 
     // 🌟 SLOW-PATH CACHE MISS: Spin up background crawler thread safely
@@ -183,6 +190,7 @@ app.post('/api/forecast', async (req, res) => {
     const dynamicResponseDoc = {
         crop: cropQuery.charAt(0).toUpperCase() + cropQuery.slice(1),
         price: finalLivePrice,
+        basePrice: finalLivePrice, // Double-mapped field resolves React extraction criteria safely
         mandi: assignedMandi,
         source: designatedSource,
         timestamp: new Date().toLocaleString(),

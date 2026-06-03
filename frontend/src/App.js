@@ -50,30 +50,26 @@ export default function App() {
 
     searchDebounceRef.current = setTimeout(async () => {
       if (queryText.trim().length > 1) {
-        const exactMatchExists = marketPrices.some(item => 
-          item.crop.toLowerCase().includes(queryText.toLowerCase().trim())
-        );
-
-        if (!exactMatchExists) {
-          try {
-            const res = await fetch('/api/forecast', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ crop: queryText })
-            });
-            const data = await res.json();
-            if (data && data.basePrice) {
-              const newLiveRow = {
-                crop: data.crop,
-                price: data.basePrice,
-                mandi: data.mandi || "National Hub",
-                source: "Instant Cache Search",
-                date: data.timestamp || new Date().toLocaleString()
-              };
-              setMarketPrices(prev => [newLiveRow, ...prev.filter(i => i.crop.toLowerCase() !== data.crop.toLowerCase())]);
-            }
-          } catch (err) { console.log("Bypassed search processing"); }
-        }
+        try {
+          const res = await fetch('/api/forecast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ crop: queryText.trim() })
+          });
+          const data = await res.json();
+          if (data && data.price) {
+            const newLiveRow = {
+              crop: data.crop,
+              price: data.price, // Aligned to your clean backend response data schema
+              mandi: data.mandi || "National Hub",
+              source: data.source || "Live Stream Engine", // Displays real e-NAM / e-Panta tracking anchors natively
+              date: data.timestamp || new Date().toLocaleString()
+            };
+            
+            // Instantly appends the dynamic row updates cleanly at the top of your visual data grids
+            setMarketPrices(prev => [newLiveRow, ...prev.filter(i => i.crop.toLowerCase() !== data.crop.toLowerCase())]);
+          }
+        } catch (err) { console.log("Bypassed search processing"); }
       }
     }, 250);
   };

@@ -5,8 +5,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
   const [marketPrices, setMarketPrices] = useState([]);
   const [filterCrop, setFilterCrop] = useState('');
-  const [forecastCrop, setForecastCrop] = useState('Paddy');
+  
+  // 🌟 RESTRUCTURED PRICE HISTORY STATES MATRIX
+  const [forecastCrop, setForecastCrop] = useState('Maize');
   const [forecastData, setForecastData] = useState([]);
+  const [historyScope, setHistoryScope] = useState('1Y'); // Managed ranges: '1M' | '6M' | '1Y' | '5Y'
+  const [historyMeta, setHistoryPayloadMeta] = useState({ lowest: 0, average: 0, highest: 0, source: 'Initializing...', timestamp: '...' });
+  const [isGraphLoading, setIsGraphLoading] = useState(false);
   
   // Auth contexts
   const [user, setUser] = useState(null); 
@@ -34,6 +39,13 @@ export default function App() {
     if (user && user.role === 'admin') fetchAdminUsers();
   }, [user]);
 
+  // Hook into timeline configurations to refresh graph coordinates upon state mutations
+  useEffect(() => {
+    if (activeTab === 'Price History') {
+      generatePriceHistoryCurve(forecastCrop, historyScope);
+    }
+  }, [historyScope, activeTab]);
+
   const fetchMarketPrices = async () => {
     try {
       const res = await fetch('/api/market-prices');
@@ -51,22 +63,21 @@ export default function App() {
     searchDebounceRef.current = setTimeout(async () => {
       if (queryText.trim().length > 1) {
         try {
-          const res = await fetch('/api/forecast', {
+          const res = await fetch('/api/history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ crop: queryText.trim() })
+            body: JSON.stringify({ crop: queryText.trim(), range: '1Y' })
           });
           const data = await res.json();
           if (data && data.price) {
             const newLiveRow = {
               crop: data.crop,
-              price: data.price, // Aligned to your clean backend response data schema
+              price: data.price,
               mandi: data.mandi || "National Hub",
-              source: data.source || "Live Stream Engine", // Displays real e-NAM / e-Panta tracking anchors natively
+              source: data.source || "Live Stream Engine",
               date: data.timestamp || new Date().toLocaleString()
             };
             
-            // Instantly appends the dynamic row updates cleanly at the top of your visual data grids
             setMarketPrices(prev => [newLiveRow, ...prev.filter(i => i.crop.toLowerCase() !== data.crop.toLowerCase())]);
           }
         } catch (err) { console.log("Bypassed search processing"); }
@@ -88,16 +99,42 @@ export default function App() {
     } catch (e) { setAdminUsers([]); }
   };
 
-  const generateForecast = async () => {
+  // 🌟 RE-ENGINEERED TELEMETRY CONTROLLER PIPELINE (1M | 6M | 1Y | 5Y ADAPTIVE)
+  const generatePriceHistoryCurve = async (targetCropName = forecastCrop, selectedRange = historyScope) => {
     try {
-      const res = await fetch('/api/forecast', {
+      setIsGraphLoading(true);
+      const res = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ crop: forecastCrop })
+        body: JSON.stringify({ crop: targetCropName, range: selectedRange })
       });
       const data = await res.json();
-      setForecastData(data.forecastDays || []);
-    } catch (e) { console.error(e); }
+      if (data.success) {
+        setForecastData(data.historicalCoordinatesData || []);
+        setHistoryPayloadMeta({
+          lowest: data.lowest || 0,
+          average: data.average || 0,
+          highest: data.highest || 0,
+          source: data.source || 'Verified Source',
+          timestamp: data.timestamp || 'Just Now'
+        });
+      }
+    } catch (e) { console.error("History retrieval interrupted:", e); }
+    finally { setIsGraphLoading(false); }
+  };
+
+  // Helper macro generating timeline intervals mapping down across structural ranges
+  const getTimelineLabelsXAxis = () => {
+    const pointsCount = forecastData.length;
+    const labels = [];
+    for (let i = 1; i <= pointsCount; i++) {
+      if (historyScope === '1M') labels.push(`Day ${i}`);
+      else if (historyScope === '6M') labels.push(`M-${i}`);
+      else if (historyScope === '1Y') labels.push(`Int ${i}`);
+      else if (historyScope === '5Y') labels.push(`Yr ${i}`);
+    }
+    if (labels.length > 0) labels[labels.length - 1] = "Live Spot";
+    return labels;
   };
 
   const handleAuthSubmit = async (e) => {
@@ -174,6 +211,8 @@ export default function App() {
     } catch (e) {}
   };
 
+  const axisLabels = getTimelineLabelsXAxis();
+
   return (
     <div className="irsa-app-wrapper">
       <div className="animated-background-overlay">
@@ -224,7 +263,8 @@ export default function App() {
           <div className="nav-tabs-wrapper">
             <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
             <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
-            <button onClick={() => setActiveTab('Forecast')} className={`tab-btn ${activeTab === 'Forecast' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Forecast</span></button>
+            {/* 🌟 REDIRECTED FORECAST ACTION NAVIGATION TRACK */}
+            <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
             {user && user.role === 'farmer' && <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>}
             {user && user.role === 'merchant' && <button onClick={() => setActiveTab('Merchant Portal')} className={`tab-btn ${activeTab === 'Merchant Portal' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Merchant Catalog</span></button>}
             {user && user.role === 'admin' && <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>}
@@ -242,10 +282,10 @@ export default function App() {
         {activeTab === 'Home' && (
           <div className="glass-slab animated-entrance">
             <h1 className="hero-heading">IRSA — Intelligent <br/><span className="gradient-text">Resource Ecosystem</span></h1>
-            <p className="hero-paragraph">Empowering agricultural hubs with high-efficiency data crawlers, live market price calculation matrices, and automated time-series forecasting curves.</p>
+            <p className="hero-paragraph">Empowering agricultural hubs with high-efficiency data crawlers, live market price calculation matrices, and multi-timeline analytical chart layouts.</p>
             <div className="btn-group">
               <button onClick={() => setActiveTab('Market Prices')} className="primary-action-btn">Open Live Mandi Prices <ArrowUpRight size={15}/></button>
-              <button onClick={() => setActiveTab('Forecast')} className="secondary-action-btn">Forecast Price Curves</button>
+              <button onClick={() => setActiveTab('Price History')} className="secondary-action-btn">Inspect Price Graphs</button>
             </div>
           </div>
         )}
@@ -287,24 +327,132 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'Forecast' && (
-          <div className="glass-slab animated-entrance">
-            <h2 className="section-title">AI Trend Engine</h2>
-            <p className="section-subtitle mb-6">Short-term prospective curves processed directly through forward-pass regression tensor loops.</p>
-            <div className="filter-group mb-6" style={{marginBottom:'30px'}}>
-              <input type="text" className="glass-input" style={{width:'320px'}} value={forecastCrop} onChange={e => setForecastCrop(e.target.value)} placeholder="Type ANY random crop name here..."/>
-              <button onClick={generateForecast} className="primary-action-btn">Process Analytics Curve</button>
+        {/* 🌟 RESTRUCTURED PRICE HISTORY COMPONENT PANEL (REPLACING FORECAST SLABS) */}
+        {activeTab === 'Price History' && (
+          <div className="glass-slab animated-entrance" style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h2 className="section-title">Price History Graph</h2>
+                <div style={{ display: 'flex', gap: '20px', fontSize: '14px', marginTop: '4px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
+                    <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#ef4444' }}></span>
+                    Offer Price
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
+                    <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#06b6d4' }}></span>
+                    Prices (₹)
+                  </span>
+                </div>
+              </div>
+
+              {/* Real-time Query Input Selection Field */}
+              <div className="filter-group">
+                <input 
+                  type="text" className="glass-input" style={{ width: '240px' }} 
+                  value={forecastCrop} onChange={e => setForecastCrop(e.target.value)} 
+                  placeholder="Type crop name (e.g. Maize)..."
+                />
+                <button onClick={() => generatePriceHistoryCurve(forecastCrop, historyScope)} className="refresh-btn">Fetch History</button>
+              </div>
             </div>
-            {forecastData.length > 0 && (
-              <div className="chart-grid">
-                {forecastData.map((val, i) => (
-                  <div key={i} className="chart-card">
-                    <div className="card-day">INTERVAL DAY {i+1}</div>
-                    <div className="card-value">₹{val.toLocaleString('en-IN')}</div>
+
+            {/* High-Density Real Metric Headers Line Marquee */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: '12px 24px', borderRadius: '6px 6px 0 0', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+              <div>Lowest: <span style={{ color: '#ef4444', fontWeight: 'bold' }}>₹{historyMeta.lowest.toLocaleString('en-IN')}</span></div>
+              <div>Average: <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>₹{historyMeta.average.toLocaleString('en-IN')}</span></div>
+              <div>Highest: <span style={{ color: '#10b981', fontWeight: 'bold' }}>₹{historyMeta.highest.toLocaleString('en-IN')}</span></div>
+            </div>
+
+            {/* Main Interactive Chart Grid Display Layer */}
+            <div style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none' }}>
+              {isGraphLoading && (
+                <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
+                  Re-indexing verified marketplace timeline arrays...
+                </div>
+              )}
+
+              <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
+                <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
+                      <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+
+                  {/* Horizontal dotted references rules */}
+                  <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
+                  <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
+                  <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
+
+                  {forecastData.length > 1 && (
+                    <>
+                      <path
+                        d={`M ${forecastData.map((val, idx) => {
+                          const x = (idx / (forecastData.length - 1)) * 1000;
+                          const padFloor = historyMeta.lowest * 0.8;
+                          const padCeil = historyMeta.highest * 1.2;
+                          const y = 260 - (((val - padFloor) / (padCeil - padFloor)) * 260);
+                          return `${x} ${y}`;
+                        }).join(' L ')}`}
+                        fill="none"
+                        stroke="#06b6d4"
+                        strokeWidth="3"
+                      />
+                      <path
+                        d={`M 0 260 L ${forecastData.map((val, idx) => {
+                          const x = (idx / (forecastData.length - 1)) * 1000;
+                          const padFloor = historyMeta.lowest * 0.8;
+                          const padCeil = historyMeta.highest * 1.2;
+                          const y = 260 - (((val - padFloor) / (padCeil - padFloor)) * 260);
+                          return `${x} ${y}`;
+                        }).join(' L ')} L 1000 260 Z`}
+                        fill="url(#frontAreaGradient)"
+                      />
+                    </>
+                  )}
+                </svg>
+              </div>
+
+              {/* X-Axis Horizontal String Labels Axis Mapping */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingLeft: '6px' }}>
+                {axisLabels.map((item, index) => (
+                  <div key={index} style={{ fontSize: '10px', color: '#475569', transform: 'rotate(-20deg)', whiteSpace: 'nowrap' }}>
+                    {item}
                   </div>
                 ))}
               </div>
-            )}
+            </div>
+
+            {/* Timeline Filter Trigger Blocks Grid */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              {[
+                { key: '1M', text: '1 Month' },
+                { key: '6M', text: '6 Months' },
+                { key: '1Y', text: '1 Year Full View' },
+                { key: '5Y', text: '5 Years Macro View' }
+              ].map(item => (
+                <button
+                  key={item.key}
+                  onClick={() => setHistoryScope(item.key)}
+                  className="secondary-action-btn"
+                  style={{
+                    backgroundColor: historyScope === item.key ? '#06b6d4' : 'rgba(30,41,59,0.5)',
+                    color: historyScope === item.key ? '#0f172a' : '#cbd5e1',
+                    border: historyScope === item.key ? '1px solid #06b6d4' : '1px solid #334155',
+                    padding: '6px 14px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {item.text}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginTop: '20px', fontSize: '11px', color: '#475569', fontFamily: 'Consolas, monospace' }}>
+              Data Trace Channel: {historyMeta.source} | Last Update Event Block: {historyMeta.timestamp}
+            </div>
           </div>
         )}
 

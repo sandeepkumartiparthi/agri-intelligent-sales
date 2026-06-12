@@ -322,6 +322,7 @@ export default function App() {
             {!user ? (
               <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
             ) : (
+              // 🌟 INTEGRATED ADJUSTMENT: Direct token invalidation routine bound safely
               <button onClick={handleLogoutEvent} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
             )}
           </div>

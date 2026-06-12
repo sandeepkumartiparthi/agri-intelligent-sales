@@ -30,7 +30,25 @@ export default function App() {
   // Timer ref holder for debouncing network calls
   const searchDebounceRef = useRef(null);
 
+  // 🌟 NEW UPDATION: Secure Token Injection Core Utility
+  const getSecurityHeaders = (contentType = 'application/json') => {
+    const token = localStorage.getItem('irsa_session_token');
+    const headers = {};
+    if (contentType) headers['Content-Type'] = contentType;
+    if (token) headers['Authorization'] = token;
+    return headers;
+  };
+
+  // 🌟 NEW UPDATION: Persistent Session Lifecycle Hydration Loop
   useEffect(() => {
+    const activeProfile = localStorage.getItem('irsa_user_profile');
+    if (activeProfile) {
+      try {
+        setUser(JSON.parse(activeProfile));
+      } catch (err) {
+        localStorage.clear();
+      }
+    }
     fetchMarketPrices();
     fetchListings();
   }, []);
@@ -94,8 +112,14 @@ export default function App() {
 
   const fetchAdminUsers = async () => {
     try {
-      const res = await fetch('/api/admin/users');
-      setAdminUsers(await res.json());
+      const res = await fetch('/api/admin/users', {
+        headers: getSecurityHeaders() // 🌟 NEW UPDATION: Attached authorized token layout properties
+      });
+      if (res.ok) {
+        setAdminUsers(await res.json());
+      } else {
+        setAdminUsers([]);
+      }
     } catch (e) { setAdminUsers([]); }
   };
 
@@ -156,6 +180,11 @@ export default function App() {
           setIsSignUp(false);
         } else {
           alert("Login successful! Identity verified.");
+          
+          // 🌟 NEW UPDATION: Secure cookie-alternative persistence layer setup
+          if (data.token) localStorage.setItem('irsa_session_token', data.token);
+          localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
+
           setUser(data.user);
           setActiveTab('Home');
         }
@@ -185,13 +214,16 @@ export default function App() {
     try {
       const res = await fetch('/api/listings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSecurityHeaders('application/json'), // 🌟 NEW UPDATION: Transmit token payload properties cleanly
         body: JSON.stringify({ ...farmerForm, farmerId: user.id, farmerName: user.name })
       });
       if (res.ok) {
         setFarmerForm({ cropName: '', quantity: '', locationText: '', mapLink: '', imageStream: '' });
         fetchListings();
         alert("Listing batch committed to database nodes successfully.");
+      } else {
+        const errPayload = await res.json();
+        alert(`Action Failed: ${errPayload.message || 'Unauthorized package modification entry.'}`);
       }
     } catch (err) { console.error(err); }
   };
@@ -199,17 +231,36 @@ export default function App() {
   const deleteListing = async (id) => {
     if (!window.confirm("Confirm listing removal from cloud nodes?")) return;
     try {
-      const res = await fetch(`/api/listings/${id}`, { method: 'DELETE' });
-      if (res.ok) { fetchListings(); if (selectedListing && selectedListing._id === id) setSelectedListing(null); }
+      const res = await fetch(`/api/listings/${id}`, { 
+        method: 'DELETE',
+        headers: getSecurityHeaders(null) // 🌟 NEW UPDATION: Secure deletion verification headers 
+      });
+      if (res.ok) { 
+        fetchListings(); 
+        if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
+      } else {
+        const errPayload = await res.json();
+        alert(`Action Restreicted: ${errPayload.message}`);
+      }
     } catch (e) {}
   };
 
   const deleteUser = async (id) => {
     if (!window.confirm("Purge account index structure permanently?")) return;
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/users/${id}`, { 
+        method: 'DELETE',
+        headers: getSecurityHeaders(null) // 🌟 NEW UPDATION: Secure admin runtime execution clearance
+      });
       if (res.ok) fetchAdminUsers();
     } catch (e) {}
+  };
+
+  // 🌟 NEW UPDATION: Complete Session State Termination Handler
+  const handleLogoutEvent = () => {
+    localStorage.clear();
+    setUser(null);
+    setActiveTab('Home');
   };
 
   const axisLabels = getTimelineLabelsXAxis();
@@ -264,7 +315,6 @@ export default function App() {
           <div className="nav-tabs-wrapper">
             <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
             <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
-            {/* 🌟 REDIRECTED FORECAST ACTION NAVIGATION TRACK */}
             <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
             {user && user.role === 'farmer' && <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>}
             {user && user.role === 'merchant' && <button onClick={() => setActiveTab('Merchant Portal')} className={`tab-btn ${activeTab === 'Merchant Portal' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Merchant Catalog</span></button>}
@@ -272,7 +322,7 @@ export default function App() {
             {!user ? (
               <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
             ) : (
-              <button onClick={() => { setUser(null); setActiveTab('Home'); }} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
+              <button onClick={handleLogoutEvent} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
             )}
           </div>
         </div>

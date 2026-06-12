@@ -68,7 +68,7 @@ export default function App() {
 
   const fetchMarketPrices = async () => {
     try {
-      const res = await fetch('/api/market-prices');
+      const res = await fetch('/api/market-prices', { headers: getSecurityHeaders() });
       const data = await res.json();
       setMarketPrices(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
@@ -107,7 +107,7 @@ export default function App() {
 
   const fetchListings = async () => {
     try {
-      const res = await fetch('/api/listings');
+      const res = await fetch('/api/listings', { headers: getSecurityHeaders() });
       setListings(await res.json());
     } catch (e) { setListings([]); }
   };
@@ -356,7 +356,7 @@ export default function App() {
                   className="glass-input" style={{width: '320px'}}
                   value={filterCrop} onChange={handleLiveSearchTrigger}
                 />
-                <button onClick={fetchMarketPrices} className="refresh-btn">Reset Grid</button>
+                <button onClick={fetchMarketPrices} className="secondary-action-btn">Reset Grid</button>
               </div>
             </div>
             <div className="table-container">
@@ -405,7 +405,7 @@ export default function App() {
                   value={forecastCrop} onChange={e => setForecastCrop(e.target.value)} 
                   placeholder="Type crop name (e.g. Maize)..."
                 />
-                <button onClick={() => generatePriceHistoryCurve(forecastCrop, historyScope)} className="refresh-btn">Fetch History</button>
+                <button onClick={() => generatePriceHistoryCurve(forecastCrop, historyScope)} className="primary-action-btn">Fetch History</button>
               </div>
             </div>
 

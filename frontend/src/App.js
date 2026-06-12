@@ -110,7 +110,8 @@ export default function App() {
       });
       const data = await res.json();
       if (data.success) {
-        setForecastData(data.historicalCoordinatesData || []);
+        // 🌟 UPDATED FIX: Maps directly to the incoming telemetry dataset array matching your endpoint keys
+        setForecastData(data.historicalPointsArray || []);
         setHistoryPayloadMeta({
           lowest: data.lowest || 0,
           average: data.average || 0,

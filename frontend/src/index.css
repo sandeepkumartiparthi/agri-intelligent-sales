@@ -672,7 +672,7 @@ body {
   margin-bottom: 30px;
 }
 
-@media (max-w: 600px) {
+@media (max-width: 600px) {
   .admin-summary-grid { grid-template-columns: 1fr; }
 }
 
@@ -733,3 +733,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(16, 185, 129, 0.35);
 }
+
+/* 🌟 ADDED: Button Style Fixes */
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.refresh-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }

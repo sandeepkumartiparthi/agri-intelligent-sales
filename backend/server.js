@@ -137,7 +137,7 @@ const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
                         if (scrapedKey.includes(cropKey) || cropKey.includes(scrapedKey)) {
                             COMMODITY_CACHE_MAP.set(scrapedKey, {
                                 crop: scrapedCrop,
-                                price: parseInt(parseFloat(clean(cols[6])), 10),
+                                price: parseInt(parseFloat(clean(cols(6))), 10),
                                 mandi: clean(cols[2]),
                                 source: "e-NAM National Platform",
                                 date: new Date().toLocaleString()

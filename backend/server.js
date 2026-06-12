@@ -137,7 +137,7 @@ const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
                         if (scrapedKey.includes(cropKey) || cropKey.includes(scrapedKey)) {
                             COMMODITY_CACHE_MAP.set(scrapedKey, {
                                 crop: scrapedCrop,
-                                price: parseInt(parseFloat(clean(cols(6))), 10),
+                                price: parseInt(parseFloat(clean(cols[6])), 10),
                                 mandi: clean(cols[2]),
                                 source: "e-NAM National Platform",
                                 date: new Date().toLocaleString()
@@ -149,7 +149,7 @@ const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
                 }
             }
         } catch (err) {
-            console.log(`[Background Pipeline Silent Check]: Target portal busy. Retained math matrix calculations.`);
+            console.log(`[Background Pipeline Silent Check]: Target portal busy. Retained current cached values.`);
         }
     });
 };
@@ -247,16 +247,12 @@ app.post('/api/history', async (req, res) => {
             designatedSource = cachedItem.source;
             timestamp = cachedItem.date || timestamp;
         } else {
-            // Safe, non-blocking trigger execution to scrape unknown fields asynchronously
             triggerBackgroundScrapePoller(cropQuery, cropKey);
-            
-            // Map real-world data estimations if crop is entirely outside memory vectors
             const charSum = [...cropKey].reduce((sum, char) => sum + char.charCodeAt(0), 0);
             const baseFactor = Math.max(16.0, (charSum % 76) + 18.2);
             targetRealPrice = Math.floor(baseFactor * GLOBAL_FX_INDICATOR);
         }
 
-        // Configure array index point distribution parameters based on range selection rules
         let intervalPointsCount = 12;
         if (rangeScope === "1M") intervalPointsCount = 30;
         else if (rangeScope === "6M") intervalPointsCount = 6;
@@ -266,20 +262,17 @@ app.post('/api/history', async (req, res) => {
         const seedSum = [...cropKey].reduce((sum, char) => sum + char.charCodeAt(0), 0);
         const realTimeHistoricalCurve = [];
         
-        // Execute math loop metrics scaling numbers into organic trajectories relative to true spot rates
         for (let t = 1; t <= intervalPointsCount; t++) {
             let sinewaveFluctuation = Math.sin(seedSum + t) * (targetRealPrice * 0.07);
             let linearTimelineTrend = (rangeScope === "5Y" || rangeScope === "1Y") ? (t * (targetRealPrice * 0.015)) : 0;
             let currentPriceValueNode = Math.floor(targetRealPrice - (targetRealPrice * 0.15) + sinewaveFluctuation + linearTimelineTrend);
             
-            // Explicit correction adjustments mimicking real market dips inside index boundaries natively
             if (t % 4 === 0) {
                 currentPriceValueNode = Math.floor(currentPriceValueNode - (targetRealPrice * 0.05));
             }
             realTimeHistoricalCurve.push(Math.max(450, currentPriceValueNode));
         }
 
-        // Enforce synchronization data integrity by pinning the real price onto the final terminal index
         realTimeHistoricalCurve[realTimeHistoricalCurve.length - 1] = targetRealPrice;
 
         const calculatedLowest = Math.min(...realTimeHistoricalCurve);
@@ -311,5 +304,3 @@ app.use(express.static(path.join(__dirname, '../frontend/build')));
 app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
-
-module.exports = app;

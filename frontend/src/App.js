@@ -12,6 +12,7 @@ export default function App() {
   const [historyScope, setHistoryScope] = useState('1Y'); // Managed ranges: '1M' | '6M' | '1Y' | '5Y'
   const [historyMeta, setHistoryPayloadMeta] = useState({ lowest: 0, average: 0, highest: 0, source: 'Initializing...', timestamp: '...' });
   const [isGraphLoading, setIsGraphLoading] = useState(false);
+  const [hoveredPoint, setHoveredPoint] = useState(null); // 🌟 UPDATION: Hover tracker
   
   // Auth contexts
   const [user, setUser] = useState(null); 
@@ -129,6 +130,7 @@ export default function App() {
   const generatePriceHistoryCurve = async (targetCropName = forecastCrop, selectedRange = historyScope) => {
     try {
       setIsGraphLoading(true);
+      setHoveredPoint(null);
       const res = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -380,7 +382,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 🌟 RESTRUCTURED PRICE HISTORY COMPONENT PANEL (REPLACING FORECAST SLABS) */}
+        {/* --- PRICE HISTORY WITH INTERACTIVE HOVER TOOLTIP --- */}
         {activeTab === 'Price History' && (
           <div className="glass-slab animated-entrance" style={{ position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -417,7 +419,20 @@ export default function App() {
             </div>
 
             {/* Main Interactive Chart Grid Display Layer */}
-            <div style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none' }}>
+            <div style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none' }}
+              onMouseMove={(e) => {
+                const rect = e.target.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const idx = Math.round((x / rect.width) * (forecastData.length - 1));
+                if (forecastData[idx]) setHoveredPoint({ x: (idx / (forecastData.length - 1)) * 1000, val: forecastData[idx], date: axisLabels[idx] });
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
+            >
+              {hoveredPoint && (
+                <div style={{ position: 'absolute', left: `${(hoveredPoint.x / 1000) * 90}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10 }}>
+                  {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
+                </div>
+              )}
               {isGraphLoading && (
                 <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
                   Re-indexing verified marketplace timeline arrays...

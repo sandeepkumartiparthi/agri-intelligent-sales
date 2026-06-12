@@ -55,6 +55,7 @@ export default function App() {
 
   useEffect(() => {
     if (user && user.role === 'admin') fetchAdminUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Hook into timeline configurations to refresh graph coordinates upon state mutations
@@ -62,6 +63,7 @@ export default function App() {
     if (activeTab === 'Price History') {
       generatePriceHistoryCurve(forecastCrop, historyScope);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyScope, activeTab]);
 
   const fetchMarketPrices = async () => {
@@ -240,7 +242,7 @@ export default function App() {
         if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
       } else {
         const errPayload = await res.json();
-        alert(`Action Restreicted: ${errPayload.message}`);
+        alert(`Action Restricted: ${errPayload.message}`);
       }
     } catch (e) {}
   };
@@ -322,7 +324,6 @@ export default function App() {
             {!user ? (
               <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
             ) : (
-              // 🌟 INTEGRATED ADJUSTMENT: Direct token invalidation routine bound safely
               <button onClick={handleLogoutEvent} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
             )}
           </div>

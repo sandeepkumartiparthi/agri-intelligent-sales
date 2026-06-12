@@ -40,7 +40,6 @@ export default function App() {
     return headers;
   };
 
-  // 🌟 NEW UPDATION: Persistent Session Lifecycle Hydration Loop
   useEffect(() => {
     const activeProfile = localStorage.getItem('irsa_user_profile');
     if (activeProfile) {
@@ -52,6 +51,7 @@ export default function App() {
     }
     fetchMarketPrices();
     fetchListings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

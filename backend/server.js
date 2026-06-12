@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const bcrypt = require('bcryptjs'); // 🌟 NEW UPDATION: Mount high-security comparative encryption maps
 
 const app = express();
 
@@ -55,8 +56,20 @@ app.post('/api/auth/signup', async (req, res) => {
         const duplicateCheck = LOCAL_USER_DATABASE.find(u => u.email === normalizedEmail);
         if (duplicateCheck) return res.status(400).json({ success: false, message: "Account already exists." });
 
+        // 🌟 NEW UPDATION: Generate secure salt iterations and securely encrypt raw values
+        const salt = await bcrypt.genSalt(10);
+        const securedPasswordHash = await bcrypt.hash(password.trim(), salt);
+
         const uid = "user_node_" + Math.random().toString(36).substr(2, 9);
-        const newUser = { id: uid, _id: uid, name: name.trim(), email: normalizedEmail, password: password.trim(), role: targetedRole, createdAt: new Date() };
+        const newUser = { 
+            id: uid, 
+            _id: uid, 
+            name: name.trim(), 
+            email: normalizedEmail, 
+            password: securedPasswordHash, // 🌟 Save the cryptographic passkey safely to in-memory shards
+            role: targetedRole, 
+            createdAt: new Date() 
+        };
         LOCAL_USER_DATABASE.push(newUser);
         return res.status(201).json({ success: true, user: { id: newUser.id, name: newUser.name, role: newUser.role } });
     } catch (e) { return res.status(500).json({ success: false }); }
@@ -65,8 +78,17 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password, role } = req.body;
-        const userDoc = LOCAL_USER_DATABASE.find(u => u.email === email.trim().toLowerCase() && u.password === password.trim() && u.role === role.trim().toLowerCase());
+        const normalizedEmail = email.trim().toLowerCase();
+        const targetedRole = role.trim().toLowerCase();
+
+        // Query active profile by standard lowercase string token alignment rules
+        const userDoc = LOCAL_USER_DATABASE.find(u => u.email === normalizedEmail && u.role === targetedRole);
         if (!userDoc) return res.status(401).json({ success: false, message: "Access Denied." });
+
+        // 🌟 NEW UPDATION: Decrypt and compare secure credentials using non-blocking asynchronous comparisons
+        const isCredentialsMatch = await bcrypt.compare(password.trim(), userDoc.password);
+        if (!isCredentialsMatch) return res.status(401).json({ success: false, message: "Access Denied." });
+
         return res.json({ success: true, user: { id: userDoc.id, name: userDoc.name, role: userDoc.role } });
     } catch (e) { return res.status(500).json({ success: false }); }
 });
@@ -254,7 +276,7 @@ app.post('/api/history', async (req, res) => {
             if (t % 4 === 0) {
                 currentPriceValueNode = Math.floor(currentPriceValueNode - (targetRealPrice * 0.05));
             }
-            realTimeHistoricalCurve.push(Math.max(450, currentPriceValueValueNode || currentPriceValueNode));
+            realTimeHistoricalCurve.push(Math.max(450, currentPriceValueNode));
         }
 
         // Enforce synchronization data integrity by pinning the real price onto the final terminal index

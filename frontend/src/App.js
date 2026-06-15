@@ -1,10 +1,18 @@
-import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck } from 'lucide-react';
+import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck, Package } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
   const [marketPrices, setMarketPrices] = useState([]);
   const [filterCrop, setFilterCrop] = useState('');
+  
+  // 🌟 NEW: MARKETPLACE STATES
+  const [fertilizers, setFertilizers] = useState([]);
+  const [checkoutMode, setCheckoutMode] = useState(null); // null | 'details' | 'confirm'
+  const [orderConfirm, setOrderConfirm] = useState(null);
+  const [addressInput, setAddressInput] = useState('');
+  const [selectedFertilizer, setSelectedFertilizer] = useState(null);
   
   // 🌟 RESTRUCTURED PRICE HISTORY STATES MATRIX
   const [forecastCrop, setForecastCrop] = useState('Maize');
@@ -51,6 +59,8 @@ export default function App() {
     }
     fetchMarketPrices();
     fetchListings();
+    // 🌟 NEW: Load marketplace data
+    axios.get('/api/marketplace').then(res => setFertilizers(res.data)).catch(console.error);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -267,6 +277,14 @@ export default function App() {
     setActiveTab('Home');
   };
 
+  // 🌟 MARKETPLACE PURCHASE HANDLER
+  const processPurchase = async (prod) => {
+    if(!addressInput) return alert("Enter address!");
+    const res = await axios.post('/api/checkout', { productId: prod.id, address: addressInput });
+    setOrderConfirm(res.data);
+    setCheckoutMode('confirm');
+  };
+
   const axisLabels = getTimelineLabelsXAxis();
 
   return (
@@ -280,39 +298,11 @@ export default function App() {
       <nav className="glass-navbar">
         <div className="nav-container">
           <div className="brand-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              style={{
-                width: '24px',
-                height: '24px',
-                color: '#34d399',
-                filter: 'drop-shadow(0 0 8px rgba(52, 211, 153, 0.4))',
-                animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-              }}
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '24px', height: '24px', color: '#34d399', filter: 'drop-shadow(0 0 8px rgba(52, 211, 153, 0.4))', animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
               <circle cx="12" cy="12" r="2.5" fill="#34d399" />
-              <path d="M12 2v7.5M12 14.5V22" />
-              <path d="M5 12h4.5M14.5 12H19" />
-              <path d="M18.4 5.6l-3.2 3.2M8.8 15.2l-3.2 3.2" />
-              <path d="M5.6 5.6l3.2 3.2M15.2 15.2l3.2 3.2" />
+              <path d="M12 2v7.5M12 14.5V22" /><path d="M5 12h4.5M14.5 12H19" /><path d="M18.4 5.6l-3.2 3.2M8.8 15.2l-3.2 3.2" /><path d="M5.6 5.6l3.2 3.2M15.2 15.2l3.2 3.2" />
             </svg>
-            
-            <span style={{
-              fontSize: '20px',
-              fontWeight: '800',
-              letterSpacing: '1.5px',
-              background: 'linear-gradient(to right, #ffffff, #cbd5e1)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
-              IRSA
-            </span>
+            <span style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '1.5px', background: 'linear-gradient(to right, #ffffff, #cbd5e1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>IRSA</span>
             <Sparkles size={14} className="sparkle-icon" style={{ color: '#34d399', marginLeft: '-4px' }} />
           </div>
 
@@ -320,8 +310,8 @@ export default function App() {
             <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
             <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
             <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
+            {user && <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>}
             {user && user.role === 'farmer' && <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>}
-            {user && user.role === 'merchant' && <button onClick={() => setActiveTab('Merchant Portal')} className={`tab-btn ${activeTab === 'Merchant Portal' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Merchant Catalog</span></button>}
             {user && user.role === 'admin' && <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>}
             {!user ? (
               <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
@@ -334,6 +324,32 @@ export default function App() {
 
       <main className="app-main-content">
         
+        {/* --- 🛒 MARKETPLACE SECTION --- */}
+        {activeTab === 'Marketplace' && (
+           <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
+             {checkoutMode === 'confirm' ? (
+               <div style={{ textAlign: 'center', color: '#fff' }}>
+                 <h1>Order Confirmed!</h1>
+                 <p>ID: {orderConfirm.orderId}</p>
+                 <p>Arriving: {orderConfirm.deliveryDate}</p>
+                 <button onClick={() => setCheckoutMode(null)} className="primary-action-btn">Back to Shop</button>
+               </div>
+             ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                  {fertilizers.map(f => (
+                    <div key={f.id} style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(15px)', padding: '25px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.2)' }}>
+                      <h3 style={{ color: '#fff' }}>{f.name}</h3>
+                      <p style={{ color: '#ddd' }}>{f.desc}</p>
+                      <h2 style={{ color: '#38bdf8' }}>₹{f.price}</h2>
+                      <input type="text" placeholder="Address" className="glass-input" style={{ width: '100%', marginBottom: '10px' }} onChange={(e) => setAddressInput(e.target.value)} />
+                      <button onClick={() => processPurchase(f)} className="form-submit-btn">Buy Now</button>
+                    </div>
+                  ))}
+                </div>
+             )}
+           </div>
+        )}
+
         {activeTab === 'Home' && (
           <div className="glass-slab animated-entrance">
             <h1 className="hero-heading">IRSA — Intelligent <br/><span className="gradient-text">Resource Ecosystem</span></h1>

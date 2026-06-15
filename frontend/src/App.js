@@ -1,5 +1,6 @@
 import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck, Package } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import AIAgent from './components/AIAgent';
 import axios from 'axios';
 
 export default function App() {
@@ -730,6 +731,10 @@ export default function App() {
           </div>
         </div>
       )}
+        {/* ... your existing JSX ... */}
+      
+      {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
+      <AIAgent />
     </div>
   );
 }

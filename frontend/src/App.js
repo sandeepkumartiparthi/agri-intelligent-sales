@@ -13,7 +13,7 @@ export default function App() {
   const [checkoutMode, setCheckoutMode] = useState(null); // null | 'details' | 'confirm'
   const [orderConfirm, setOrderConfirm] = useState(null);
   const [addressInput, setAddressInput] = useState('');
-  const [selectedFertilizer, setSelectedFertilizer] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', phno: '', quantity: 1 });
   const [arbitrage, setArbitrage] = useState({});
   const [finance, setFinance] = useState({ profit: 0, creditScore: 0 });

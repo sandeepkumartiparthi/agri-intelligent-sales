@@ -3,15 +3,19 @@ import { MessageCircle, X, Send } from 'lucide-react';
 
 const AIAgent = ({ marketData }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([{ sender: 'ai', text: 'IRSA Assistant active. How can I help you analyze the market today?' }]);
+  const [messages, setMessages] = useState([
+    { sender: 'ai', text: 'IRSA Assistant active. How can I help you analyze the market today?' }
+  ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
 
+  // Auto-scroll to bottom
   useEffect(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
+    
     const userMsg = { sender: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
     const currentInput = input;
@@ -19,10 +23,14 @@ const AIAgent = ({ marketData }) => {
     setIsTyping(true);
 
     try {
+      // Send the prompt AND the current marketData prop
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: currentInput, data: marketData }),
+        body: JSON.stringify({ 
+          prompt: currentInput, 
+          data: marketData // This ensures the backend gets the latest list
+        }),
       });
 
       const reader = response.body.getReader();
@@ -30,12 +38,14 @@ const AIAgent = ({ marketData }) => {
       let aiReply = '';
       
       setIsTyping(false);
+      // Create empty message for streaming
       setMessages(prev => [...prev, { sender: 'ai', text: '' }]);
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         aiReply += decoder.decode(value, { stream: true });
+        
         setMessages(prev => {
           const newMsgs = [...prev];
           newMsgs[newMsgs.length - 1].text = aiReply;
@@ -44,7 +54,7 @@ const AIAgent = ({ marketData }) => {
       }
     } catch (e) {
       setIsTyping(false);
-      setMessages(prev => [...prev, { sender: 'ai', text: "Service busy. Please try again." }]);
+      setMessages(prev => [...prev, { sender: 'ai', text: "Service busy. Please check connection." }]);
     }
   };
 
@@ -62,11 +72,11 @@ const AIAgent = ({ marketData }) => {
                 {m.text}
               </div>
             ))}
-            {isTyping && <div style={{ fontSize: '12px', color: '#34d399', fontStyle: 'italic' }}>AI is thinking...</div>}
+            {isTyping && <div style={{ fontSize: '12px', color: '#34d399', fontStyle: 'italic' }}>AI is analyzing data...</div>}
             <div ref={chatEndRef} />
           </div>
           <div style={{ display: 'flex', gap: '5px' }}>
-            <input className="glass-input" style={{ flex: 1, padding: '8px' }} value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder="Ask about crops..." />
+            <input className="glass-input" style={{ flex: 1, padding: '8px' }} value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder="Ask about Paddy, Wheat..." />
             <button onClick={handleSend} className="primary-action-btn"><Send size={15} /></button>
           </div>
         </div>

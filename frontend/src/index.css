@@ -747,3 +747,28 @@ body {
   transition: all 0.2s ease;
 }
 .refresh-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+
+/* Glassmorphic Marketplace Styles */
+.glass-slab {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+    transition: 0.3s;
+}
+
+.glass-input {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.glass-slab:hover {
+    background: rgba(255, 255, 255, 0.1);
+}

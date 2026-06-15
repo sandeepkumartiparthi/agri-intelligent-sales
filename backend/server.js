@@ -75,21 +75,18 @@ app.post('/api/ai-chat', async (req, res) => {
     try {
         const context = (data && Array.isArray(data)) ? JSON.stringify(data) : "No market data available.";
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // UPDATE THIS LINE to a currently supported model
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            systemInstruction: `You are the IRSA Agricultural AI Assistant. 
+                Use this context to answer questions: ${context}.
+                If the answer isn't in the data, use your general knowledge.
+                Be concise and professional.`
+        });
 
-        const systemInstruction = `
-            You are the IRSA Agricultural AI Assistant.
-            - Access this data: ${context}.
-            - Answer questions accurately using this data.
-            - If not in the data, use general agricultural knowledge.
-            - Be concise and professional.
-        `;
-
-        // The correct way to send instructions + prompt
-        const result = await model.generateContent(`${systemInstruction}\nUser Question: ${prompt}`);
+        const result = await model.generateContent(prompt);
         
-        const response = await result.response;
-        res.json({ reply: response.text() });
+        res.json({ reply: result.response.text() });
 
     } catch (error) {
         console.error("AI Agent Error:", error);

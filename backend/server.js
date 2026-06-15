@@ -71,22 +71,25 @@ initializeCacheMatrix();
 // --- 🤖 DYNAMIC AI AGENT BRAIN ---
 app.post('/api/ai-chat', async (req, res) => {
     const { prompt, data } = req.body;
-    
-    // Optimization: Filter data to only what is relevant to the query
-    const relevantData = data.filter(item => prompt.toLowerCase().includes(item.crop.toLowerCase()));
-    const context = relevantData.length > 0 ? JSON.stringify(relevantData) : "No specific data.";
+
+    // Debugging: Check if data is arriving
+    console.log("Received Data for AI:", data); 
 
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-        
-        // Use streaming for low-perceived latency
-        const result = await model.generateContentStream(prompt + " Context: " + context);
-        
-        res.setHeader('Content-Type', 'text/plain');
-        for await (const chunk of result.stream) {
-            res.write(chunk.text());
-        }
-        res.end();
+        const context = (data && data.length > 0) 
+            ? JSON.stringify(data) 
+            : "No market data available.";
+
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash-lite",
+            systemInstruction: `You are the IRSA Agricultural AI. 
+            You MUST use the following market data to answer. 
+            If the user asks for a price, look for the crop in this data: ${context}.
+            If it's not in the data, tell them you don't have that specific data but answer generally.`
+        });
+
+        const result = await model.generateContent(prompt);
+        res.send(result.response.text());
     } catch (error) {
         res.status(500).send("Service busy.");
     }
@@ -245,7 +248,6 @@ const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
 app.get('/api/market-prices', async (req, res) => {
     res.json(Array.from(COMMODITY_CACHE_MAP.values()));
 });
-
 // 2️⃣ ENDPOINT B: ANY CROP SEARCH GATEWAY — INSTANT RESOLUTION WITH DYNAMIC ESTIMATION
 app.post('/api/forecast', async (req, res) => {
     const rawQuery = req.body.crop || "Paddy";

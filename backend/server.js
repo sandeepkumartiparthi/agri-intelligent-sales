@@ -71,26 +71,24 @@ initializeCacheMatrix();
 // --- 🤖 DYNAMIC AI AGENT BRAIN ---
 app.post('/api/ai-chat', async (req, res) => {
     const { prompt, data } = req.body;
+    
+    // Optimization: Filter data to only what is relevant to the query
+    const relevantData = data.filter(item => prompt.toLowerCase().includes(item.crop.toLowerCase()));
+    const context = relevantData.length > 0 ? JSON.stringify(relevantData) : "No specific data.";
 
     try {
-        const context = (data && Array.isArray(data)) ? JSON.stringify(data) : "No market data available.";
-
-        // UPDATE THIS LINE to a currently supported model
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash",
-            systemInstruction: `You are the IRSA Agricultural AI Assistant. 
-                Use this context to answer questions: ${context}.
-                If the answer isn't in the data, use your general knowledge.
-                Be concise and professional.`
-        });
-
-        const result = await model.generateContent(prompt);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
         
-        res.json({ reply: result.response.text() });
-
+        // Use streaming for low-perceived latency
+        const result = await model.generateContentStream(prompt + " Context: " + context);
+        
+        res.setHeader('Content-Type', 'text/plain');
+        for await (const chunk of result.stream) {
+            res.write(chunk.text());
+        }
+        res.end();
     } catch (error) {
-        console.error("AI Agent Error:", error);
-        res.status(500).json({ reply: "I'm having trouble connecting to the data nodes. Please try again." });
+        res.status(500).send("Service busy.");
     }
 });
 

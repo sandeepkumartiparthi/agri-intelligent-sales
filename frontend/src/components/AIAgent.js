@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const AIAgent = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([{ sender: 'ai', text: 'Hello! I am your IRSA Assistant. Ask me about prices, listings, or fertilizers.' }]);
+  const [messages, setMessages] = useState([{ sender: 'ai', text: 'IRSA Assistant active. How can I help you analyze the market today?' }]);
   const [input, setInput] = useState('');
   const chatEndRef = useRef(null);
 
@@ -26,7 +26,7 @@ const AIAgent = () => {
   };
 
   return (
-    <div className="ai-agent-container" style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 9999 }}>
+    <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 9999 }}>
       {isOpen ? (
         <div className="glass-slab" style={{ width: '320px', height: '400px', display: 'flex', flexDirection: 'column', padding: '15px', border: '1px solid #34d399' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>

@@ -14,6 +14,17 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// 🌟 NEW UPDATION: DYNAMIC ALIAS MAPPER
+const CROP_NAME_MAP = {
+    "rice": "Paddy(Common)",
+    "paddy": "Paddy(Common)",
+    "mirchi": "Red Chillies",
+    "chilli": "Red Chillies",
+    "groundnut": "Groundnut",
+    "maize": "Maize",
+    "cotton": "Cotton"
+};
+
 // 🌐 INTEGRATED RENDER PYTHON LIVE CORE ROUTE
 const RENDER_PYTHON_URL = "https://agri-intelligent-sales.onrender.com";
 
@@ -149,7 +160,7 @@ const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
                 }
             }
         } catch (err) {
-            console.log(`[Background Pipeline Silent Check]: Target portal busy. Retained current cached values.`);
+            console.log(`[Background Pipeline Silent Check]: Target portal busy. Retained math matrix calculations.`);
         }
     });
 };
@@ -163,7 +174,8 @@ app.get('/api/market-prices', async (req, res) => {
 
 // 2️⃣ ENDPOINT B: ANY CROP SEARCH GATEWAY — INSTANT RESOLUTION WITH DYNAMIC ESTIMATION
 app.post('/api/forecast', async (req, res) => {
-    const cropQuery = req.body.crop || "Paddy";
+    const rawQuery = req.body.crop || "Paddy";
+    const cropQuery = CROP_NAME_MAP[rawQuery.toLowerCase().trim()] || rawQuery;
     const cropKey = String(cropQuery).toLowerCase().trim().replace(/ /g, "").replace(/\(/g, "").replace(/\)/g, "");
     
     if (COMMODITY_CACHE_MAP.has(cropKey)) {
@@ -227,11 +239,12 @@ app.post('/api/forecast', async (req, res) => {
 });
 
 // 3️⃣ NEW ADDED UPDATION ENDPOINT: ADAPTIVE MULTI-SCOPE PRICE HISTORY VECTOR ENGINE
-// Guarantees strict O(1) operational complexity lookup for any crop parameter typed in India
 app.post('/api/history', async (req, res) => {
     try {
-        const cropQuery = req.body.crop || "Paddy";
-        const rangeScope = req.body.range || "1Y"; // Acceptable tokens: "1M" | "6M" | "1Y" | "5Y"
+        const rawCrop = req.body.crop || "Paddy";
+        const rangeScope = req.body.range || "1Y";
+        // 🌟 ALIAS MAPPING INTEGRATED
+        const cropQuery = CROP_NAME_MAP[rawCrop.toLowerCase().trim()] || rawCrop;
         const cropKey = String(cropQuery).toLowerCase().trim().replace(/ /g, "").replace(/\(/g, "").replace(/\)/g, "");
         
         let targetRealPrice = 2240;
@@ -239,7 +252,6 @@ app.post('/api/history', async (req, res) => {
         let designatedSource = "e-NAM National Platform";
         let timestamp = new Date().toLocaleString();
 
-        // Strict O(1) fast-path cache evaluation mapping
         if (COMMODITY_CACHE_MAP.has(cropKey)) {
             const cachedItem = COMMODITY_CACHE_MAP.get(cropKey);
             targetRealPrice = cachedItem.price;
@@ -304,3 +316,5 @@ app.use(express.static(path.join(__dirname, '../frontend/build')));
 app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
+
+module.exports = app;

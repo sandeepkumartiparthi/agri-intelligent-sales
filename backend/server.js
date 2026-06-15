@@ -4,7 +4,7 @@ const axios = require('axios');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // 🌟 NEW UPDATION: Mount high-security comparative encryption maps
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI("AQ.Ab8RN6J_QlnzQJID6vxT4fXWt4eXV8zmThphPyjdM9eEJ0BJXA");
+const genAI = new GoogleGenerativeAI("AQ.Ab8RN6Ijf7HnH3xOhJr59fHNrwDjcrMhUyywKXx6IvDV3jO04w");
 
 const app = express();
 
@@ -73,27 +73,31 @@ initializeCacheMatrix();
 app.post('/api/ai-chat', async (req, res) => {
     const { prompt } = req.body;
     
-    // We package your live data into a "Knowledge Context"
-    const knowledgeContext = `
-        You are an intelligent Agricultural Assistant for IRSA. 
-        Use the following live system data to answer the user's question:
-        - Commodities Data: ${JSON.stringify(Array.from(COMMODITY_CACHE_MAP.values()))}
-        - Fertilizer Inventory: ${JSON.stringify(FERTILIZER_INVENTORY)}
-        - Total Farmer Listings: ${LOCAL_LISTINGS_DATABASE.length}
-        
-        Rules:
-        - If the user asks about prices or stock, use the data provided above.
-        - If the answer isn't in the data, provide general agricultural advice.
-        - Be conversational, dynamic, and act like a helpful expert.
+    // 1. Create a safe snapshot of your data
+    // Use optional chaining (?.) to prevent crashes if data isn't loaded yet
+    const dataSnapshot = `
+        Current Market Prices: ${JSON.stringify(Array.from(COMMODITY_CACHE_MAP?.entries() || []))}
+        Fertilizer Stock: ${JSON.stringify(FERTILIZER_INVENTORY || [])}
     `;
 
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent([knowledgeContext, prompt]);
-        const response = await result.response;
-        res.json({ reply: response.text() });
+        
+        // 2. The Agent Instruction (This makes it "think" like an agent)
+        const instruction = `
+            You are the IRSA AI Assistant. 
+            - Answer questions accurately based ONLY on the data provided in the Data Snapshot.
+            - If the user asks a question not related to the data, use your general knowledge but mention you are an agricultural assistant.
+            - If data is missing (e.g., list is empty), inform the user that the system is currently syncing.
+            Data Snapshot: ${dataSnapshot}
+        `;
+
+        const result = await model.generateContent([instruction, prompt]);
+        res.json({ reply: result.response.text() });
+        
     } catch (error) {
-        res.status(500).json({ reply: "I'm experiencing a momentary connection issue. Please try again." });
+        console.error("AI Error:", error);
+        res.json({ reply: "I am having trouble accessing the data nodes right now. Please try again." });
     }
 });
 
@@ -163,12 +167,6 @@ app.post('/api/crop-advisor', (req, res) => {
     const { fertilizerKg, waterLevel, soilType, cropName } = req.body;
     const yieldEstimate = Math.floor((fertilizerKg * 0.85) + (waterLevel * 0.4) + (soilType === 'clay' ? 50 : 20)) * (cropName.toLowerCase() === 'paddy' ? 1.2 : 1.0);
     res.json({ success: true, yieldEstimate, recommendation: yieldEstimate > 500 ? "High yield potential." : "Optimize inputs." });
-});
-
-app.get('/api/export-listings', (req, res) => {
-    const csv = ["Crop,Quantity,Location,Status", ...LOCAL_LISTINGS_DATABASE.map(i => `${i.cropName},${i.quantity},${i.locationText},${i.status || 'Registered'}`)].join('\n');
-    res.setHeader('Content-Type', 'text/csv');
-    res.send(csv);
 });
 
 app.get('/api/arbitrage-scanner', (req, res) => {

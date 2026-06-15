@@ -118,14 +118,45 @@ app.post('/api/auth/login', async (req, res) => {
     } catch (e) { return res.status(500).json({ success: false }); }
 });
 
-// --- 🛒 NEW MARKETPLACE API ---
+// --- 🛒 NEW MARKETPLACE API & UPDATED CHECKOUT FLOW ---
 app.get('/api/marketplace', (req, res) => res.json(FERTILIZER_INVENTORY));
+
 app.post('/api/checkout', (req, res) => {
-    const { productId, address } = req.body;
+    const { productId, name, address, phno, quantity } = req.body;
     const product = FERTILIZER_INVENTORY.find(p => p.id === productId);
-    const deliveryDate = new Date();
-    deliveryDate.setDate(deliveryDate.getDate() + 3);
-    res.json({ success: true, orderId: "IRSA-" + Date.now().toString(36).toUpperCase(), product: product.name, finalPrice: product.price, deliveryDate: deliveryDate.toDateString(), message: `Order confirmed for address: ${address}` });
+    const d = new Date(); d.setDate(d.getDate() + 5);
+    res.json({ success: true, orderId: "IRSA-" + Date.now().toString(36).toUpperCase(), item: product.name, total: product.price * quantity, deliveryDate: d.toDateString() });
+});
+
+// --- 🧠 AI ADVISOR & ANALYTICS ---
+app.post('/api/crop-advisor', (req, res) => {
+    const { fertilizerKg, waterLevel, soilType, cropName } = req.body;
+    const yieldEstimate = Math.floor((fertilizerKg * 0.85) + (waterLevel * 0.4) + (soilType === 'clay' ? 50 : 20)) * (cropName.toLowerCase() === 'paddy' ? 1.2 : 1.0);
+    res.json({ success: true, yieldEstimate, recommendation: yieldEstimate > 500 ? "High yield potential." : "Optimize inputs." });
+});
+
+app.get('/api/export-listings', (req, res) => {
+    const csv = ["Crop,Quantity,Location,Status", ...LOCAL_LISTINGS_DATABASE.map(i => `${i.cropName},${i.quantity},${i.locationText},${i.status || 'Registered'}`)].join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.send(csv);
+});
+
+app.get('/api/arbitrage-scanner', (req, res) => {
+    let best = {};
+    COMMODITY_CACHE_MAP.forEach(item => { if (!best[item.crop] || item.price > best[item.crop].price) best[item.crop] = item; });
+    res.json(best);
+});
+
+app.post('/api/calculate-profit', (req, res) => {
+    const { yieldQty, inputCost, marketPrice } = req.body;
+    const profit = (yieldQty * marketPrice) - inputCost;
+    res.json({ profit, creditScore: Math.floor((yieldQty * 0.5) + (profit > 0 ? 100 : 0)) });
+});
+
+app.post('/api/update-status', (req, res) => {
+    const { id, status } = req.body;
+    LOCAL_LISTINGS_DATABASE = LOCAL_LISTINGS_DATABASE.map(i => i._id === id ? {...i, status} : i);
+    res.json({ success: true });
 });
 
 // --- 🌾 MARKETPLACE CONTROLS LAYERS ---
@@ -268,7 +299,7 @@ app.post('/api/history', async (req, res) => {
         const rawCrop = req.body.crop || "Paddy";
         const rangeScope = req.body.range || "1Y";
         // 🌟 ALIAS MAPPING INTEGRATED
-        const cropQuery = CROP_NAME_MAP[rawCrop.toLowerCase().trim()] || rawCrop;
+        const cropQuery = CROP_NAME_MAP[rawCrop.toLowerCase().trim()] || rawQuery;
         const cropKey = String(cropQuery).toLowerCase().trim().replace(/ /g, "").replace(/\(/g, "").replace(/\)/g, "");
         
         let targetRealPrice = 2240;

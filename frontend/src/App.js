@@ -7,12 +7,17 @@ export default function App() {
   const [marketPrices, setMarketPrices] = useState([]);
   const [filterCrop, setFilterCrop] = useState('');
   
-  // 🌟 NEW: MARKETPLACE STATES
+  // 🌟 NEW: MARKETPLACE & ADVANCED TOOLS STATES
   const [fertilizers, setFertilizers] = useState([]);
   const [checkoutMode, setCheckoutMode] = useState(null); // null | 'details' | 'confirm'
   const [orderConfirm, setOrderConfirm] = useState(null);
   const [addressInput, setAddressInput] = useState('');
   const [selectedFertilizer, setSelectedFertilizer] = useState(null);
+  const [checkoutData, setCheckoutData] = useState({ name: '', address: '', phno: '', quantity: 1 });
+  const [arbitrage, setArbitrage] = useState({});
+  const [finance, setFinance] = useState({ profit: 0, creditScore: 0 });
+  const [advisorResult, setAdvisorResult] = useState(null);
+  const [advisorForm, setAdvisorForm] = useState({ fertilizerKg: 0, waterLevel: 0, soilType: 'clay', cropName: 'Paddy' });
   
   // 🌟 RESTRUCTURED PRICE HISTORY STATES MATRIX
   const [forecastCrop, setForecastCrop] = useState('Maize');
@@ -279,8 +284,8 @@ export default function App() {
 
   // 🌟 MARKETPLACE PURCHASE HANDLER
   const processPurchase = async (prod) => {
-    if(!addressInput) return alert("Enter address!");
-    const res = await axios.post('/api/checkout', { productId: prod.id, address: addressInput });
+    if(!checkoutData.address || !checkoutData.name || !checkoutData.phno) return alert("Fill all details!");
+    const res = await axios.post('/api/checkout', { productId: prod.id, ...checkoutData });
     setOrderConfirm(res.data);
     setCheckoutMode('confirm');
   };
@@ -311,6 +316,8 @@ export default function App() {
             <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
             <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
             {user && <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>}
+            {user && <button onClick={() => { setActiveTab('Pro Tools'); axios.get('/api/arbitrage-scanner').then(r => setArbitrage(r.data)); }} className={`tab-btn ${activeTab === 'Pro Tools' ? 'active-tab' : ''}`}><Sparkles size={15}/> <span>Pro Tools</span></button>}
+            <button onClick={() => window.open('/api/export-listings')} className="tab-btn"><ArrowUpRight size={15}/> <span>Export CSV</span></button>
             {user && user.role === 'farmer' && <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>}
             {user && user.role === 'admin' && <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>}
             {!user ? (
@@ -329,25 +336,49 @@ export default function App() {
            <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
              {checkoutMode === 'confirm' ? (
                <div style={{ textAlign: 'center', color: '#fff' }}>
-                 <h1>Order Confirmed!</h1>
-                 <p>ID: {orderConfirm.orderId}</p>
-                 <p>Arriving: {orderConfirm.deliveryDate}</p>
-                 <button onClick={() => setCheckoutMode(null)} className="primary-action-btn">Back to Shop</button>
+                  <h1>Order Confirmed!</h1>
+                  <p>Order ID: {orderConfirm.orderId}</p>
+                  <p>Arriving: {orderConfirm.deliveryDate}</p>
+                  <button onClick={() => setCheckoutMode(null)} className="primary-action-btn">Back to Shop</button>
                </div>
              ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                   {fertilizers.map(f => (
-                    <div key={f.id} style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(15px)', padding: '25px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    <div key={f.id} className="glass-slab" style={{ padding: '25px' }}>
                       <h3 style={{ color: '#fff' }}>{f.name}</h3>
                       <p style={{ color: '#ddd' }}>{f.desc}</p>
                       <h2 style={{ color: '#38bdf8' }}>₹{f.price}</h2>
-                      <input type="text" placeholder="Address" className="glass-input" style={{ width: '100%', marginBottom: '10px' }} onChange={(e) => setAddressInput(e.target.value)} />
-                      <button onClick={() => processPurchase(f)} className="form-submit-btn">Buy Now</button>
+                      <button onClick={() => setSelectedProduct(f)} className="form-submit-btn">Buy Now</button>
                     </div>
                   ))}
                 </div>
              )}
            </div>
+        )}
+
+        {/* --- 🛠️ PRO TOOLS: ARBITRAGE & PROFIT --- */}
+        {activeTab === 'Pro Tools' && (
+          <div className="animated-entrance split-grid">
+            <div className="glass-slab">
+              <h2 className="section-title">Arbitrage Scanner</h2>
+              {Object.entries(arbitrage).map(([crop, data]) => <p key={crop}>{crop}: <strong>₹{data.price}</strong> at {data.mandi}</p>)}
+            </div>
+            <div className="glass-slab">
+              <h2 className="section-title">Profit Ledger</h2>
+              <input type="number" className="glass-input" placeholder="Yield Qty" onChange={e => axios.post('/api/calculate-profit', { yieldQty: e.target.value, inputCost: 2000, marketPrice: 2200 }).then(r => setFinance(r.data))} />
+              <p>Profit: ₹{finance.profit} | Credit Score: {finance.creditScore}</p>
+            </div>
+            <div className="glass-slab">
+              <h2 className="section-title">AI Crop Advisor</h2>
+              <select className="glass-input" onChange={e => setAdvisorForm({...advisorForm, soilType: e.target.value})}>
+                <option value="clay">Clay Soil</option>
+                <option value="sandy">Sandy Soil</option>
+              </select>
+              <input type="number" className="glass-input" placeholder="Kg Fertilizer" onChange={e => setAdvisorForm({...advisorForm, fertilizerKg: e.target.value})} />
+              <button onClick={async () => { const res = await axios.post('/api/crop-advisor', advisorForm); setAdvisorResult(res.data); }} className="primary-action-btn">Calculate</button>
+              {advisorResult && <p>{advisorResult.recommendation}</p>}
+            </div>
+          </div>
         )}
 
         {activeTab === 'Home' && (
@@ -667,6 +698,20 @@ export default function App() {
         )}
 
       </main>
+
+      {/* Checkout Modal */}
+      {selectedProduct && (
+        <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
+          <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
+            <h3>Purchase: {selectedProduct.name}</h3>
+            <input className="glass-input" placeholder="Name" onChange={e => setCheckoutData({...checkoutData, name: e.target.value})} />
+            <input className="glass-input" placeholder="Address" onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
+            <input className="glass-input" placeholder="Phone" onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
+            <input type="number" className="glass-input" placeholder="Qty" onChange={e => setCheckoutData({...checkoutData, quantity: e.target.value})} />
+            <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn">Checkout</button>
+          </div>
+        </div>
+      )}
 
       {selectedListing && (
         <div className="modal-backdrop" onClick={() => setSelectedListing(null)}>

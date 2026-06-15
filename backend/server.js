@@ -4,8 +4,7 @@ const axios = require('axios');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // 🌟 NEW UPDATION: Mount high-security comparative encryption maps
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI("AQ.Ab8RN6Ijf7HnH3xOhJr59fHNrwDjcrMhUyywKXx6IvDV3jO04w");
-
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const app = express();
 
 // 🌟 FIX: Bind the port INSTANTLY so Render's port scanner hooks in immediately!
@@ -71,33 +70,30 @@ initializeCacheMatrix();
 
 // --- 🤖 DYNAMIC AI AGENT BRAIN ---
 app.post('/api/ai-chat', async (req, res) => {
-    const { prompt } = req.body;
-    
-    // 1. Create a safe snapshot of your data
-    // Use optional chaining (?.) to prevent crashes if data isn't loaded yet
-    const dataSnapshot = `
-        Current Market Prices: ${JSON.stringify(Array.from(COMMODITY_CACHE_MAP?.entries() || []))}
-        Fertilizer Stock: ${JSON.stringify(FERTILIZER_INVENTORY || [])}
-    `;
+    const { prompt, data } = req.body;
 
     try {
+        const context = (data && Array.isArray(data)) ? JSON.stringify(data) : "No market data available.";
+
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        
-        // 2. The Agent Instruction (This makes it "think" like an agent)
-        const instruction = `
-            You are the IRSA AI Assistant. 
-            - Answer questions accurately based ONLY on the data provided in the Data Snapshot.
-            - If the user asks a question not related to the data, use your general knowledge but mention you are an agricultural assistant.
-            - If data is missing (e.g., list is empty), inform the user that the system is currently syncing.
-            Data Snapshot: ${dataSnapshot}
+
+        const systemInstruction = `
+            You are the IRSA Agricultural AI Assistant.
+            - Access this data: ${context}.
+            - Answer questions accurately using this data.
+            - If not in the data, use general agricultural knowledge.
+            - Be concise and professional.
         `;
 
-        const result = await model.generateContent([instruction, prompt]);
-        res.json({ reply: result.response.text() });
+        // The correct way to send instructions + prompt
+        const result = await model.generateContent(`${systemInstruction}\nUser Question: ${prompt}`);
         
+        const response = await result.response;
+        res.json({ reply: response.text() });
+
     } catch (error) {
-        console.error("AI Error:", error);
-        res.json({ reply: "I am having trouble accessing the data nodes right now. Please try again." });
+        console.error("AI Agent Error:", error);
+        res.status(500).json({ reply: "I'm having trouble connecting to the data nodes. Please try again." });
     }
 });
 

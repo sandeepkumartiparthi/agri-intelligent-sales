@@ -25,6 +25,20 @@ const CROP_NAME_MAP = {
     "cotton": "Cotton"
 };
 
+// 🛒 NEW UPDATION: PROFESSIONAL FERTILIZER MARKETPLACE INVENTORY
+let FERTILIZER_INVENTORY = [
+    { id: "f1", name: "Urea (46% N)", price: 350, desc: "High-quality nitrogenous source.", stock: 100 },
+    { id: "f2", name: "DAP (Diammonium Phosphate)", price: 1200, desc: "Vital for root foundation.", stock: 50 },
+    { id: "f3", name: "MOP (Muriate of Potash)", price: 850, desc: "Enhances disease resistance.", stock: 75 },
+    { id: "f4", name: "SSP (Single Super Phosphate)", price: 450, desc: "Excellent soil conditioner.", stock: 40 },
+    { id: "f5", name: "NPK 19:19:19", price: 1500, desc: "Balanced water-soluble complex.", stock: 30 },
+    { id: "f6", name: "Ammonium Sulphate", price: 600, desc: "Nitrogen and Sulphur blend.", stock: 60 },
+    { id: "f7", name: "Zinc Sulphate", price: 400, desc: "Critical micronutrient.", stock: 20 },
+    { id: "f8", name: "Magnesium Sulphate", price: 300, desc: "Prevents plant yellowing.", stock: 25 },
+    { id: "f9", name: "Calcium Nitrate", price: 1100, desc: "Strengthens cell walls.", stock: 35 },
+    { id: "f10", name: "Borax", price: 250, desc: "Essential for pollination.", stock: 15 }
+];
+
 // 🌐 INTEGRATED RENDER PYTHON LIVE CORE ROUTE
 const RENDER_PYTHON_URL = "https://agri-intelligent-sales.onrender.com";
 
@@ -102,6 +116,16 @@ app.post('/api/auth/login', async (req, res) => {
 
         return res.json({ success: true, user: { id: userDoc.id, name: userDoc.name, role: userDoc.role } });
     } catch (e) { return res.status(500).json({ success: false }); }
+});
+
+// --- 🛒 NEW MARKETPLACE API ---
+app.get('/api/marketplace', (req, res) => res.json(FERTILIZER_INVENTORY));
+app.post('/api/checkout', (req, res) => {
+    const { productId, address } = req.body;
+    const product = FERTILIZER_INVENTORY.find(p => p.id === productId);
+    const deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + 3);
+    res.json({ success: true, orderId: "IRSA-" + Date.now().toString(36).toUpperCase(), product: product.name, finalPrice: product.price, deliveryDate: deliveryDate.toDateString(), message: `Order confirmed for address: ${address}` });
 });
 
 // --- 🌾 MARKETPLACE CONTROLS LAYERS ---

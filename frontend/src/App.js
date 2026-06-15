@@ -318,7 +318,7 @@ export default function App() {
             <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
             {user && <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>}
             {user && <button onClick={() => { setActiveTab('Pro Tools'); axios.get('/api/arbitrage-scanner').then(r => setArbitrage(r.data)); }} className={`tab-btn ${activeTab === 'Pro Tools' ? 'active-tab' : ''}`}><Sparkles size={15}/> <span>Pro Tools</span></button>}
-            <button onClick={() => window.open('/api/export-listings')} className="tab-btn"><ArrowUpRight size={15}/> <span>Export CSV</span></button>
+
             {user && user.role === 'farmer' && <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>}
             {user && user.role === 'admin' && <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>}
             {!user ? (
@@ -734,7 +734,7 @@ export default function App() {
         {/* ... your existing JSX ... */}
       
       {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
-      <AIAgent />
+      <AIAgent marketData={marketPrices} />
     </div>
   );
 }

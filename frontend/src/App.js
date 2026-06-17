@@ -595,19 +595,19 @@ export default function App() {
                 </div>
               )}
               <div className="input-block">
-                <label>Institutional Email Address</label>
+                <label>Email Address</label>
                 <input type="email" className="glass-input" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})}/>
               </div>
               <div className="input-block">
-                <label>Password Credentials Key</label>
+                <label>Password</label>
                 <input type="password" className="glass-input" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})}/>
               </div>
               <div className="input-block">
-                <label>Authorized System Role Group</label>
+                <label>Authorized System Role</label>
                 <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{background:'#0f172a'}}>
                   <option value="farmer">Farmer (Producer Hub)</option>
                   <option value="merchant">Merchant / Wholesaler</option>
-                  <option value="admin">Admin</option>
+                  {!isSignUp && <option value="admin">Administrator</option>}
                 </select>
               </div>
               {authError && <p style={{color:'#f87171', fontSize:'12px', fontWeight:600}}>{authError}</p>}

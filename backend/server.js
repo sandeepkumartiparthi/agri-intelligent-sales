@@ -276,11 +276,21 @@ app.get('/api/listings', async (req, res) => {
 // DELETE a listing from MongoDB
 app.delete('/api/listings/:id', async (req, res) => {
     try {
-        // You can add logic here to check if the user has permission to delete
-        await Listing.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
+        const listing = await Listing.findById(req.params.id);
+        if (!listing) return res.status(404).json({ message: "Listing not found" });
+
+        const userRole = req.headers['x-user-role'];
+        const userId = req.headers['x-user-id'];
+
+        // Security check: Only Admin OR the original Farmer can delete
+        if (userRole === 'admin' || listing.farmerId === userId) {
+            await Listing.findByIdAndDelete(req.params.id);
+            return res.json({ success: true });
+        } else {
+            return res.status(403).json({ message: "Access Denied: You are not authorized to delete this." });
+        }
     } catch (e) {
-        res.status(500).json({ success: false, message: "Failed to delete listing" });
+        res.status(500).json({ success: false, message: "Server error during deletion" });
     }
 });
 

@@ -358,6 +358,13 @@ const deleteListing = async (id) => {
             Crop Listings
         </button>
     )}
+      
+  <button 
+    onClick={() => setActiveTab('Help')} 
+    className={`tab-btn ${activeTab === 'Help' ? 'active-tab' : ''}`}
+>
+    <HelpCircle size={15}/> <span>Help</span>
+</button>
 
   {/* ONLY FARMER ACCESS: Marketplace and Pro Tools */}
   {user && user.role === 'farmer' && (

@@ -134,18 +134,30 @@ app.post('/api/auth/login', async (req, res) => {
         const normalizedEmail = email.trim().toLowerCase();
         const targetedRole = role.trim().toLowerCase();
 
-        // Query active profile by standard lowercase string token alignment rules
+        // 🌟 HARDCODED ADMIN LOGIC (Priority)
+        if (normalizedEmail === 'admin@gmail.com' && password === 'admin@9392' && targetedRole === 'admin') {
+            return res.json({ 
+                success: true, 
+                user: { id: 'admin-001', name: 'System Admin', role: 'admin' } 
+            });
+        }
+
+        // --- DATABASE LOGIC (Only for Farmers/Merchants) ---
+        // Ensure that the signup process prevents 'admin' role selection
         const userDoc = LOCAL_USER_DATABASE.find(u => u.email === normalizedEmail && u.role === targetedRole);
         if (!userDoc) return res.status(401).json({ success: false, message: "Access Denied." });
 
-        // 🌟 NEW UPDATION: Decrypt and compare secure credentials using non-blocking asynchronous comparisons
         const isCredentialsMatch = await bcrypt.compare(password.trim(), userDoc.password);
         if (!isCredentialsMatch) return res.status(401).json({ success: false, message: "Access Denied." });
 
-        return res.json({ success: true, user: { id: userDoc.id, name: userDoc.name, role: userDoc.role } });
-    } catch (e) { return res.status(500).json({ success: false }); }
+        return res.json({ 
+            success: true, 
+            user: { id: userDoc.id, name: userDoc.name, role: userDoc.role } 
+        });
+    } catch (e) { 
+        return res.status(500).json({ success: false, message: "Server error" }); 
+    }
 });
-
 // --- 🛒 NEW MARKETPLACE API & UPDATED CHECKOUT FLOW ---
 app.get('/api/marketplace', (req, res) => res.json(FERTILIZER_INVENTORY));
 

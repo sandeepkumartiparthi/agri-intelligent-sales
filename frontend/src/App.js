@@ -54,21 +54,31 @@ export default function App() {
     return headers;
   };
 
-  useEffect(() => {
-    const activeProfile = localStorage.getItem('irsa_user_profile');
-    if (activeProfile) {
-      try {
-        setUser(JSON.parse(activeProfile));
-      } catch (err) {
-        localStorage.clear();
-      }
+useEffect(() => {
+  const activeProfile = localStorage.getItem('irsa_user_profile');
+  let currentUser = null;
+
+  if (activeProfile) {
+    try {
+      currentUser = JSON.parse(activeProfile);
+      setUser(currentUser);
+    } catch (err) {
+      localStorage.clear();
     }
-    fetchMarketPrices();
-    fetchListings();
-    // 🌟 NEW: Load marketplace data
-    axios.get('/api/marketplace').then(res => setFertilizers(res.data)).catch(console.error);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+
+  fetchMarketPrices();
+  
+  // Pass the user if it exists, otherwise fetch generic
+  fetchListings(currentUser);
+  
+  // Load marketplace data
+  axios.get('/api/marketplace')
+    .then(res => setFertilizers(res.data))
+    .catch(console.error);
+
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   useEffect(() => {
     if (user && user.role === 'admin') fetchAdminUsers();
@@ -122,12 +132,22 @@ export default function App() {
     }, 250);
   };
 
-  const fetchListings = async () => {
-    try {
-      const res = await fetch('/api/listings', { headers: getSecurityHeaders() });
-      setListings(await res.json());
-    } catch (e) { setListings([]); }
-  };
+const fetchListings = async (user) => {
+  try {
+    // If no user is logged in, you might want to fetch nothing or public data
+    if (!user) {
+      const res = await axios.get('/api/listings'); // Public view
+      setListings(res.data);
+      return;
+    }
+
+    // Role-based fetch: pass role and id to backend
+    const res = await axios.get(`/api/listings?role=${user.role}&id=${user.id}`);
+    setListings(res.data);
+  } catch (err) {
+    console.error("Failed to fetch listings:", err);
+  }
+};
 
   const fetchAdminUsers = async () => {
     try {
@@ -317,6 +337,15 @@ export default function App() {
   <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
   <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
   <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
+
+  {user && (user.role === 'farmer' || user.role === 'merchant' || user.role === 'admin') && (
+        <button 
+            className={activeTab === 'Listings' ? 'active-tab' : ''} 
+            onClick={() => setActiveTab('Listings')}
+        >
+            Crop Listings
+        </button>
+    )}
 
   {/* ONLY FARMER ACCESS: Marketplace and Pro Tools */}
   {user && user.role === 'farmer' && (

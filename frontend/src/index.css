@@ -802,3 +802,11 @@ body {
     margin-top: 0;
     color: #fbbf24; /* Gold accent for crop name */
 }
+
+/* Change this to match your brand colors */
+.tab-btn.active-tab {
+    background: #34d399; /* This will make it green instead of white */
+    color: #0f172a;      /* Dark text on green background */
+    border-radius: 6px;
+    font-weight: 700;
+}

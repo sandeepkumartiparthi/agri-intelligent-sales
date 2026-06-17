@@ -471,6 +471,49 @@ const fetchListings = async (user) => {
           </div>
         )}
 
+        {/* --- 🌾 CROP LISTINGS SECTION --- */}
+{activeTab === 'Listings' && (
+  <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
+    <h2 className="section-title">Regional Crop Market Listings</h2>
+    <div className="listings-grid">
+      {listings.length > 0 ? (
+        listings.map((item) => (
+          <div key={item._id} className="listing-card">
+            <div onClick={() => setSelectedListing(item)} style={{cursor: 'pointer'}}>
+              <h3>{item.cropName}</h3>
+              <p><strong>Quantity:</strong> {item.quantity} Quintals</p>
+              <p><strong>Farmer:</strong> {item.farmerName}</p>
+              <small>Posted: {item.date}</small>
+            </div>
+
+            {/* DELETE BUTTON: Only show if User is Admin OR the Farmer who posted it */}
+            {(user.role === 'admin' || user.id === item.farmerId) && (
+              <button 
+                onClick={() => deleteListing(item._id)} 
+                className="delete-btn"
+                style={{
+                  marginTop: '15px', 
+                  background: '#ef4444', 
+                  border: 'none', 
+                  padding: '8px', 
+                  borderRadius: '6px', 
+                  color: 'white', 
+                  cursor: 'pointer',
+                  width: '100%'
+                }}
+              >
+                Delete / Mark as Sold
+              </button>
+            )}
+          </div>
+        ))
+      ) : (
+        <p>No crop listings available at the moment.</p>
+      )}
+    </div>
+  </div>
+)}
+
         {/* --- PRICE HISTORY WITH INTERACTIVE HOVER TOOLTIP --- */}
         {activeTab === 'Price History' && (
           <div className="glass-slab animated-entrance" style={{ position: 'relative' }}>

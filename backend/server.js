@@ -2,10 +2,32 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs'); // 🌟 NEW UPDATION: Mount high-security comparative encryption maps
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const app = express();
+
+// --- ☁️ DATABASE CONNECTION ---
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log("✅ Connected to Cloud Database"))
+    .catch(err => console.error("❌ Database Connection Failed", err));
+
+// --- 🏗️ SCHEMA DEFINITIONS ---
+const UserSchema = new mongoose.Schema({
+    name: String,
+    email: { type: String, unique: true },
+    password: String,
+    role: String
+});
+const User = mongoose.model('User', UserSchema);
+
+const ListingSchema = new mongoose.Schema({
+    cropName: String, quantity: Number, locationText: String, 
+    mapLink: String, imageStream: String, farmerId: String, 
+    farmerName: String, date: String
+});
+const Listing = mongoose.model('Listing', ListingSchema);
 
 // 🌟 FIX: Bind the port INSTANTLY so Render's port scanner hooks in immediately!
 const PORT = process.env.PORT || 5000;
@@ -45,9 +67,6 @@ const RENDER_PYTHON_URL = "https://agri-intelligent-sales.onrender.com";
 
 // --- 🧠 HIGH-PERFORMANCE IN-MEMORY CACHE SHARDS ---
 let COMMODITY_CACHE_MAP = new Map();
-let LOCAL_USER_DATABASE = [];
-let LOCAL_LISTINGS_DATABASE = [];
-
 // Global fallback exchange rate
 const GLOBAL_FX_INDICATOR = 83.55;
 
@@ -96,36 +115,46 @@ app.post('/api/ai-chat', async (req, res) => {
 });
 
 // --- 🔒 ACCESSIBLE SECURITY ROUTING HUBS ---
-
 app.post('/api/auth/signup', async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
+        
+        // 1. Validation
         if (!name || !email || !password || !role) {
             return res.status(400).json({ success: false, message: "All fields are mandatory." });
         }
-        const normalizedEmail = email.trim().toLowerCase();
-        let targetedRole = role.trim().toLowerCase();
-        
-        const duplicateCheck = LOCAL_USER_DATABASE.find(u => u.email === normalizedEmail);
-        if (duplicateCheck) return res.status(400).json({ success: false, message: "Account already exists." });
 
-        // 🌟 NEW UPDATION: Generate secure salt iterations and securely encrypt raw values
+        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedRole = role.trim().toLowerCase();
+
+        // 2. Check Database for existing account
+        const existingUser = await User.findOne({ email: normalizedEmail });
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: "Account already exists." });
+        }
+
+        // 3. Encrypt Password
         const salt = await bcrypt.genSalt(10);
         const securedPasswordHash = await bcrypt.hash(password.trim(), salt);
 
-        const uid = "user_node_" + Math.random().toString(36).substr(2, 9);
-        const newUser = { 
-            id: uid, 
-            _id: uid, 
-            name: name.trim(), 
-            email: normalizedEmail, 
-            password: securedPasswordHash, // 🌟 Save the cryptographic passkey safely to in-memory shards
-            role: targetedRole, 
-            createdAt: new Date() 
-        };
-        LOCAL_USER_DATABASE.push(newUser);
-        return res.status(201).json({ success: true, user: { id: newUser.id, name: newUser.name, role: newUser.role } });
-    } catch (e) { return res.status(500).json({ success: false }); }
+        // 4. Create Permanent Database Entry
+        const newUser = await User.create({
+            name: name.trim(),
+            email: normalizedEmail,
+            password: securedPasswordHash,
+            role: normalizedRole,
+            createdAt: new Date()
+        });
+
+        return res.status(201).json({ 
+            success: true, 
+            user: { id: newUser._id, name: newUser.name, role: newUser.role } 
+        });
+
+    } catch (e) { 
+        console.error("Signup Error:", e);
+        return res.status(500).json({ success: false, message: "Internal server error during signup." }); 
+    }
 });
 
 app.post('/api/auth/login', async (req, res) => {
@@ -134,7 +163,7 @@ app.post('/api/auth/login', async (req, res) => {
         const normalizedEmail = email.trim().toLowerCase();
         const targetedRole = role.trim().toLowerCase();
 
-        // 🌟 HARDCODED ADMIN LOGIC (Priority)
+        // 1. HARDCODED ADMIN LOGIC (Priority)
         if (normalizedEmail === 'admin@gmail.com' && password === 'admin@9392' && targetedRole === 'admin') {
             return res.json({ 
                 success: true, 
@@ -142,22 +171,32 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        // --- DATABASE LOGIC (Only for Farmers/Merchants) ---
-        // Ensure that the signup process prevents 'admin' role selection
-        const userDoc = LOCAL_USER_DATABASE.find(u => u.email === normalizedEmail && u.role === targetedRole);
-        if (!userDoc) return res.status(401).json({ success: false, message: "Access Denied." });
+        // 2. DATABASE LOGIC (MongoDB Atlas)
+        // We search the database for the user with matching email and role
+        const userDoc = await User.findOne({ email: normalizedEmail, role: targetedRole });
+        
+        if (!userDoc) {
+            return res.status(401).json({ success: false, message: "Access Denied: User not found." });
+        }
 
+        // 3. SECURE PASSWORD COMPARISON
         const isCredentialsMatch = await bcrypt.compare(password.trim(), userDoc.password);
-        if (!isCredentialsMatch) return res.status(401).json({ success: false, message: "Access Denied." });
+        if (!isCredentialsMatch) {
+            return res.status(401).json({ success: false, message: "Access Denied: Invalid password." });
+        }
 
+        // 4. RETURN SESSION
         return res.json({ 
             success: true, 
-            user: { id: userDoc.id, name: userDoc.name, role: userDoc.role } 
+            user: { id: userDoc._id, name: userDoc.name, role: userDoc.role } 
         });
+        
     } catch (e) { 
+        console.error("Login Error:", e);
         return res.status(500).json({ success: false, message: "Server error" }); 
     }
 });
+
 // --- 🛒 NEW MARKETPLACE API & UPDATED CHECKOUT FLOW ---
 app.get('/api/marketplace', (req, res) => res.json(FERTILIZER_INVENTORY));
 
@@ -187,31 +226,73 @@ app.post('/api/calculate-profit', (req, res) => {
     res.json({ profit, creditScore: Math.floor((yieldQty * 0.5) + (profit > 0 ? 100 : 0)) });
 });
 
-app.post('/api/update-status', (req, res) => {
-    const { id, status } = req.body;
-    LOCAL_LISTINGS_DATABASE = LOCAL_LISTINGS_DATABASE.map(i => i._id === id ? {...i, status} : i);
-    res.json({ success: true });
+app.post('/api/update-status', async (req, res) => {
+    try {
+        const { id, status } = req.body;
+        await Listing.findByIdAndUpdate(id, { status });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: "Update failed" });
+    }
 });
 
 // --- 🌾 MARKETPLACE CONTROLS LAYERS ---
+// --- 🌾 MARKETPLACE CONTROLS LAYERS (DATABASE BACKED) ---
+
+// CREATE a new listing in MongoDB
 app.post('/api/listings', async (req, res) => {
-    const item = { _id: "lst_" + Math.random().toString(36).substr(2, 9), ...req.body, date: new Date().toLocaleString() };
-    LOCAL_LISTINGS_DATABASE.unshift(item);
-    res.status(201).json({ success: true, item });
+    try {
+        const item = await Listing.create({ 
+            ...req.body, 
+            date: new Date().toLocaleString() 
+        });
+        res.status(201).json({ success: true, item });
+    } catch (e) {
+        res.status(500).json({ success: false, message: "Failed to create listing" });
+    }
 });
-app.get('/api/listings', async (req, res) => { res.json(LOCAL_LISTINGS_DATABASE); });
+
+// GET all listings from MongoDB
+app.get('/api/listings', async (req, res) => {
+    try {
+        const list = await Listing.find();
+        res.json(list);
+    } catch (e) {
+        res.status(500).json({ success: false, message: "Failed to fetch listings" });
+    }
+});
+
+// DELETE a listing from MongoDB
 app.delete('/api/listings/:id', async (req, res) => {
-    LOCAL_LISTINGS_DATABASE = LOCAL_LISTINGS_DATABASE.filter(i => i._id !== req.params.id);
-    res.json({ success: true });
+    try {
+        await Listing.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: "Failed to delete listing" });
+    }
 });
 
 // --- 🛠️ CENTRAL MANAGEMENT SCHEMES ---
-app.get('/api/admin/users', async (req, res) => { res.json(LOCAL_USER_DATABASE.map(({ password, ...u }) => u)); });
-app.delete('/api/admin/users/:id', async (req, res) => {
-    LOCAL_USER_DATABASE = LOCAL_USER_DATABASE.filter(u => u.id !== req.params.id);
-    res.json({ success: true });
-});
+// --- 👑 ADMIN MANAGEMENT (DATABASE BACKED) ---
 
+// GET all users 
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await User.find({}, { password: 0 }); // Exclude password field
+        res.json(users);
+    } catch (e) {
+        res.status(500).json({ success: false, message: "Error fetching users" });
+    }
+});
+// DELETE a user
+app.delete('/api/admin/users/:id', async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: "Error deleting user" });
+    }
+});
 // --- 🚀 ASYNCHRONOUS BACKGROUND WEB SCRAPER INJECTOR ---
 const triggerBackgroundScrapePoller = (cropQuery, cropKey) => {
     setImmediate(async () => {

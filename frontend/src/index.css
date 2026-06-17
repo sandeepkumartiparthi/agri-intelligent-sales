@@ -772,3 +772,33 @@ body {
 .glass-slab:hover {
     background: rgba(255, 255, 255, 0.1);
 }
+
+/* Container for all listing boxes */
+.listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Responsive grid */
+    gap: 20px;
+    padding: 20px;
+}
+
+/* The rectangular box style */
+.listing-card {
+    background: rgba(255, 255, 255, 0.1); /* Glass effect */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.listing-card:hover {
+    transform: scale(1.02); /* Slight zoom on hover */
+    border-color: #3b82f6;
+}
+
+.listing-card h3 {
+    margin-top: 0;
+    color: #fbbf24; /* Gold accent for crop name */
+}

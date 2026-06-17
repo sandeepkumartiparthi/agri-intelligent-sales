@@ -359,7 +359,7 @@ const deleteListing = async (id) => {
         </button>
     )}
       
-{!user && (
+{(!user || user.role === 'farmer' || user.role === 'merchant') && (
   <button 
       onClick={() => setActiveTab('Help')} 
       className={`tab-btn ${activeTab === 'Help' ? 'active-tab' : ''}`}
@@ -535,32 +535,38 @@ const deleteListing = async (id) => {
   </div>
 )}
 
-           {activeTab === 'Help' && (
-          <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
-            <h2 className="section-title">Help & Support</h2>
-            <p style={{ color: '#cbd5e1', marginBottom: '20px' }}>Need assistance with IRSA? Reach out to us through the channels below:</p>
-            
-            <div className="vertical-list">
-              <a href="tel:+919392646933" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
-                <div><strong>📱 Mobile:</strong> +91 9392646933</div>
-              </a>
+{activeTab === 'Help' && (
+  <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
+    <h2 className="section-title">Help & Support</h2>
+    <p style={{ color: '#cbd5e1', marginBottom: '20px' }}>Need assistance with IRSA? Reach out to us through the channels below:</p>
+    
+    <div className="vertical-list">
+      <a href="tel:+919392646933" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
+        <div><strong>📱 Mobile:</strong> <b>+91 9392646933</b></div>
+      </a>
 
-              <a href="mailto:sandeep@sasi.ac.in" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
-                <div><strong>📧 Email:</strong> sandeep@sasi.ac.in</div>
-              </a>
+      <a href="mailto:sandeep@sasi.ac.in" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
+        <div><strong>📧 Email:</strong> <b>sandeep@sasi.ac.in</b></div>
+      </a>
 
-              <div className="list-item-card">
-                <div><strong>📍 Location:</strong> Tadepalligudem, Andhra Pradesh</div>
-              </div>
-            </div>
+      <div className="list-item-card">
+        <div><strong>📍 Location:</strong> Tadepalligudem, Andhra Pradesh</div>
+      </div>
+    </div>
 
-            <h3 className="section-title" style={{ marginTop: '30px' }}>Quick Resources</h3>
-            <div style={{ display: 'grid', gap: '10px' }}>
-              <button className="secondary-action-btn" onClick={() => window.open('https://agmarknet.gov.in', '_blank')}>Visit Agmarknet Portal</button>
-              <button className="secondary-action-btn" onClick={() => setActiveTab('Auth Portal')}>Reset Account Credentials</button>
-            </div>
-          </div>
-        )}
+    {/* Only show "Quick Resources" if the user is logged in (Farmer/Merchant) */}
+    {user && (
+      <>
+        <h3 className="section-title" style={{ marginTop: '30px' }}>Quick Resources</h3>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <button className="secondary-action-btn" onClick={() => setActiveTab('Auth Portal')}>
+            Reset Account Credentials
+          </button>
+        </div>
+      </>
+    )}
+  </div>
+)}
 
         {/* --- PRICE HISTORY WITH INTERACTIVE HOVER TOOLTIP --- */}
         {activeTab === 'Price History' && (

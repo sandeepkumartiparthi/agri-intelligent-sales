@@ -367,8 +367,6 @@ const deleteListing = async (id) => {
       <HelpCircle size={15}/> <span>Help</span>
   </button>
 )}
-    <HelpCircle size={15}/> <span>Help</span>
-</button>
 
   {/* ONLY FARMER ACCESS: Marketplace and Pro Tools */}
   {user && user.role === 'farmer' && (

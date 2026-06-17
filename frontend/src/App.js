@@ -607,6 +607,7 @@ export default function App() {
                 <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{background:'#0f172a'}}>
                   <option value="farmer">Farmer (Producer Hub)</option>
                   <option value="merchant">Merchant / Wholesaler</option>
+                  <option value="admin">Admin</option>
                 </select>
               </div>
               {authError && <p style={{color:'#f87171', fontSize:'12px', fontWeight:600}}>{authError}</p>}

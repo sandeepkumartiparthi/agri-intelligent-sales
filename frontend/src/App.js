@@ -352,7 +352,7 @@ const deleteListing = async (id) => {
 
   {user && (user.role === 'farmer' || user.role === 'merchant' || user.role === 'admin') && (
         <button 
-            className={activeTab === 'Listings' ? 'active-tab' : ''} 
+            className={`tab-btn ${activeTab === 'Listings' ? 'active-tab' : ''}`} 
             onClick={() => setActiveTab('Listings')}
         >
             Crop Listings

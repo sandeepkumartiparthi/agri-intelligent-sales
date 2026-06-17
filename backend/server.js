@@ -243,7 +243,7 @@ app.post('/api/update-status', async (req, res) => {
 app.post('/api/listings', async (req, res) => {
     try {
         const item = await Listing.create({ 
-            ...req.body, 
+            ...req.body, // This should include farmerId sent from frontend
             date: new Date().toLocaleString() 
         });
         res.status(201).json({ success: true, item });
@@ -255,8 +255,19 @@ app.post('/api/listings', async (req, res) => {
 // GET all listings from MongoDB
 app.get('/api/listings', async (req, res) => {
     try {
-        const list = await Listing.find();
-        res.json(list);
+        const { role, id } = req.query; 
+
+        if (role === 'admin' || role === 'merchant') {
+            // Admins and Merchants see EVERYTHING
+            const allListings = await Listing.find();
+            res.json(allListings);
+        } else if (role === 'farmer') {
+            // Farmers see ONLY their own listings
+            const myListings = await Listing.find({ farmerId: id });
+            res.json(myListings);
+        } else {
+            res.status(403).json({ message: "Unauthorized role" });
+        }
     } catch (e) {
         res.status(500).json({ success: false, message: "Failed to fetch listings" });
     }
@@ -265,6 +276,7 @@ app.get('/api/listings', async (req, res) => {
 // DELETE a listing from MongoDB
 app.delete('/api/listings/:id', async (req, res) => {
     try {
+        // You can add logic here to check if the user has permission to delete
         await Listing.findByIdAndDelete(req.params.id);
         res.json({ success: true });
     } catch (e) {

@@ -359,10 +359,14 @@ const deleteListing = async (id) => {
         </button>
     )}
       
+{!user && (
   <button 
-    onClick={() => setActiveTab('Help')} 
-    className={`tab-btn ${activeTab === 'Help' ? 'active-tab' : ''}`}
->
+      onClick={() => setActiveTab('Help')} 
+      className={`tab-btn ${activeTab === 'Help' ? 'active-tab' : ''}`}
+  >
+      <HelpCircle size={15}/> <span>Help</span>
+  </button>
+)}
     <HelpCircle size={15}/> <span>Help</span>
 </button>
 
@@ -532,6 +536,33 @@ const deleteListing = async (id) => {
     </div>
   </div>
 )}
+
+           {activeTab === 'Help' && (
+          <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
+            <h2 className="section-title">Help & Support</h2>
+            <p style={{ color: '#cbd5e1', marginBottom: '20px' }}>Need assistance with IRSA? Reach out to us through the channels below:</p>
+            
+            <div className="vertical-list">
+              <a href="tel:+919392646933" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
+                <div><strong>📱 Mobile:</strong> +91 9392646933</div>
+              </a>
+
+              <a href="mailto:sandeep@sasi.ac.in" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
+                <div><strong>📧 Email:</strong> sandeep@sasi.ac.in</div>
+              </a>
+
+              <div className="list-item-card">
+                <div><strong>📍 Location:</strong> Tadepalligudem, Andhra Pradesh</div>
+              </div>
+            </div>
+
+            <h3 className="section-title" style={{ marginTop: '30px' }}>Quick Resources</h3>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              <button className="secondary-action-btn" onClick={() => window.open('https://agmarknet.gov.in', '_blank')}>Visit Agmarknet Portal</button>
+              <button className="secondary-action-btn" onClick={() => setActiveTab('Auth Portal')}>Reset Account Credentials</button>
+            </div>
+          </div>
+        )}
 
         {/* --- PRICE HISTORY WITH INTERACTIVE HOVER TOOLTIP --- */}
         {activeTab === 'Price History' && (

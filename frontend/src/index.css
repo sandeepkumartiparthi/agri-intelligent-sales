@@ -458,6 +458,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 16px;
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .list-item-card:hover {

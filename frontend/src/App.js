@@ -268,22 +268,34 @@ const fetchListings = async (user) => {
     } catch (err) { console.error(err); }
   };
 
-  const deleteListing = async (id) => {
+const deleteListing = async (id) => {
     if (!window.confirm("Confirm listing removal from cloud nodes?")) return;
+    
+    // Get user from storage to verify identity
+    const user = JSON.parse(localStorage.getItem('irsa_user_profile') || '{}');
+
     try {
-      const res = await fetch(`/api/listings/${id}`, { 
-        method: 'DELETE',
-        headers: getSecurityHeaders(null) // 🌟 NEW UPDATION: Secure deletion verification headers 
-      });
-      if (res.ok) { 
-        fetchListings(); 
-        if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
-      } else {
-        const errPayload = await res.json();
-        alert(`Action Restricted: ${errPayload.message}`);
-      }
-    } catch (e) {}
-  };
+        const res = await fetch(`/api/listings/${id}`, { 
+            method: 'DELETE',
+            // Pass the user so your backend knows if it's the owner or admin
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-user-role': user.role,
+                'x-user-id': user.id 
+            }
+        });
+
+        if (res.ok) { 
+            fetchListings(); // Refresh the list
+            if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
+        } else {
+            const errPayload = await res.json();
+            alert(`Action Restricted: ${errPayload.message}`);
+        }
+    } catch (e) {
+        console.error("Delete Error:", e);
+    }
+};
 
   const deleteUser = async (id) => {
     if (!window.confirm("Purge account index structure permanently?")) return;

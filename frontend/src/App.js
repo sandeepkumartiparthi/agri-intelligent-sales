@@ -312,21 +312,33 @@ export default function App() {
             <Sparkles size={14} className="sparkle-icon" style={{ color: '#34d399', marginLeft: '-4px' }} />
           </div>
 
-          <div className="nav-tabs-wrapper">
-            <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
-            <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
-            <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
-            {user && <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>}
-            {user && <button onClick={() => { setActiveTab('Pro Tools'); axios.get('/api/arbitrage-scanner').then(r => setArbitrage(r.data)); }} className={`tab-btn ${activeTab === 'Pro Tools' ? 'active-tab' : ''}`}><Sparkles size={15}/> <span>Pro Tools</span></button>}
+<div className="nav-tabs-wrapper">
+  {/* Always visible */}
+  <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
+  <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
+  <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
 
-            {user && user.role === 'farmer' && <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>}
-            {user && user.role === 'admin' && <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>}
-            {!user ? (
-              <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
-            ) : (
-              <button onClick={handleLogoutEvent} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
-            )}
-          </div>
+  {/* ONLY FARMER ACCESS: Marketplace and Pro Tools */}
+  {user && user.role === 'farmer' && (
+    <>
+      <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>
+      <button onClick={() => { setActiveTab('Pro Tools'); axios.get('/api/arbitrage-scanner').then(r => setArbitrage(r.data)); }} className={`tab-btn ${activeTab === 'Pro Tools' ? 'active-tab' : ''}`}><Sparkles size={15}/> <span>Pro Tools</span></button>
+      <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>
+    </>
+  )}
+
+  {/* ADMIN ACCESS */}
+  {user && user.role === 'admin' && (
+    <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>
+  )}
+
+  {/* Auth Controls */}
+  {!user ? (
+    <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
+  ) : (
+    <button onClick={handleLogoutEvent} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
+  )}
+</div>
         </div>
       </nav>
 
@@ -595,7 +607,6 @@ export default function App() {
                 <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{background:'#0f172a'}}>
                   <option value="farmer">Farmer (Producer Hub)</option>
                   <option value="merchant">Merchant / Wholesaler</option>
-                  <option value="admin">Central System Administrator</option>
                 </select>
               </div>
               {authError && <p style={{color:'#f87171', fontSize:'12px', fontWeight:600}}>{authError}</p>}

@@ -79,6 +79,53 @@ useEffect(() => {
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
+  // 🌟 NATIVE GOOGLE POPUP RENDERING EFFECT
+  useEffect(() => {
+    /* global google */
+    if (window.google && activeTab === 'Auth Portal') {
+      // Clears previously mounted buttons to prevent duplicates when tabs are toggled
+      document.getElementById("google-button-wrapper").innerHTML = "";
+
+      google.accounts.id.initialize({
+        client_id: "648741837176-4hlphht3dkrmccqk6p0180l7jmth9akr.apps.googleusercontent.com",
+        callback: async (response) => {
+          const selectedRole = document.getElementById('google-role-select').value;
+          
+          try {
+            // Sends Google's secure JWT credential token and selected dropdown role to your Render backend
+            const res = await fetch('https://agri-intelligent-sales.onrender.com/api/auth/google-verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                credential: response.credential,
+                role: selectedRole 
+              })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              alert(`Google authentication verified as ${selectedRole.toUpperCase()}!`);
+              localStorage.setItem('irsa_session_token', data.token);
+              localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
+              setUser(data.user);
+              setActiveTab('Home');
+            } else {
+              alert(`Authentication failed: ${data.message}`);
+            }
+          } catch (err) {
+            alert("Pipeline offline or connectivity error during backend verification.");
+          }
+        }
+      });
+
+      // Renders the official native Google Button slab
+      google.accounts.id.renderButton(
+        document.getElementById("google-button-wrapper"),
+        { theme: "filled_black", size: "large", shape: "rectangular", width: "100%" }
+      );
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     if (user && user.role === 'admin') fetchAdminUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -2,6 +2,8 @@ import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin
 import { useEffect, useRef, useState } from 'react';
 import AIAgent from './components/AIAgent';
 import axios from 'axios';
+import { auth, googleProvider } from './firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
@@ -709,9 +711,11 @@ const deleteListing = async (id) => {
           </div>
         )}
 
-       {activeTab === 'Auth Portal' && (
+     {activeTab === 'Auth Portal' && (
   <div className="glass-slab auth-box animated-entrance">
-    <h2 className="section-title text-center mb-6">{isSignUp ? "Create Secure Account" : "Identity Authentication Check"}</h2>
+    <h2 className="section-title text-center mb-6">
+      {isSignUp ? "Create Secure Account" : "Identity Authentication Check"}
+    </h2>
     
     <form onSubmit={handleAuthSubmit} className="vertical-form">
       {isSignUp && (
@@ -737,7 +741,9 @@ const deleteListing = async (id) => {
         </select>
       </div>
       {authError && <p style={{color:'#f87171', fontSize:'12px', fontWeight:600}}>{authError}</p>}
-      <button type="submit" className="form-submit-btn">{isSignUp ? "Register Master Account" : "Verify Credentials Access"}</button>
+      <button type="submit" className="form-submit-btn">
+        {isSignUp ? "Register Master Account" : "Verify Credentials Access"}
+      </button>
     </form>
 
     {/* Separator */}
@@ -747,14 +753,36 @@ const deleteListing = async (id) => {
       <hr style={{ flex: 1, border: '0', borderTop: '1px solid #334155' }} />
     </div>
 
+    {/* 🌟 ROLE SELECTOR REQUIRED FOR GOOGLE SIGN-IN */}
+    <div className="input-block" style={{ marginBottom: '15px' }}>
+      <label style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '6px', display: 'block' }}>Select Role Before Google Sign-In</label>
+      <select 
+        id="google-role-select"
+        className="glass-input" 
+        style={{ background: '#0f172a', color: '#fff', width: '100%' }}
+      >
+        <option value="farmer">Farmer (Producer Hub)</option>
+        <option value="merchant">Merchant / Wholesaler</option>
+      </select>
+    </div>
+
     {/* Continue with Google */}
     <button 
       onClick={async () => {
+        // Capture the selected role from the dropdown
+        const selectedRole = document.getElementById('google-role-select').value;
+
         try {
-          const res = await fetch('/api/auth/google', { method: 'POST' });
+          // Calls your secured Render backend API endpoint directly
+          const res = await fetch('https://agri-intelligent-sales.onrender.com/api/auth/google', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: selectedRole })
+          });
+          
           const data = await res.json();
           if (data.success) {
-            alert("Google authentication verified!");
+            alert(`Google authentication verified as ${selectedRole.toUpperCase()}!`);
             localStorage.setItem('irsa_session_token', data.token);
             localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
             setUser(data.user);
@@ -794,11 +822,11 @@ const deleteListing = async (id) => {
     </button>
 
     <p className="auth-toggle-text" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }} style={{ marginTop: '20px' }}>
-      {isSignUp ? "Already hold active clearance? " : "Require new profile registration? "} <span>{isSignUp ? "Login Here" : "Sign Up Here"}</span>
+      {isSignUp ? "Already hold active clearance? " : "Require new profile registration? "} 
+      <span>{isSignUp ? "Login Here" : "Sign Up Here"}</span>
     </p>
   </div>
 )}
-
         {activeTab === 'Farmer Portal' && user && (
           <div className="split-grid animated-entrance">
             <div className="glass-slab">

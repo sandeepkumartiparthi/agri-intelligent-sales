@@ -838,7 +838,7 @@ const deleteListing = async (id) => {
 
       </main>
 
-  {/* Checkout Modal */}
+{/* Checkout Modal */}
     {selectedProduct && (
       <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
         <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
@@ -848,27 +848,27 @@ const deleteListing = async (id) => {
           <input className="glass-input" placeholder="Address" onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
           <input className="glass-input" placeholder="Phone" onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
           
-          {/* 🌟 QUANTITY CONTROLLER WITH PLUS/MINUS LOCK */}
-          <div className="quantity-control-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '15px', margin: '10px 0' }}>
-            <span style={{ color: '#fff', fontSize: '14px' }}>Quantity:</span>
+          {/* 🌟 RESTRUCTURED QUANTITY ROW */}
+          <div className="modal-qty-row">
+            <span style={{ fontSize: '15px' }}>Quantity:</span>
             <button 
               type="button" 
               onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Math.max(1, Number(prev.quantity) - 1) }))}
-              className="qty-btn"
+              className="modal-qty-btn"
             >
               -
             </button>
-            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '16px' }}>{checkoutData.quantity || 1}</span>
+            <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{checkoutData.quantity || 1}</span>
             <button 
               type="button" 
               onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Number(prev.quantity) + 1 }))}
-              className="qty-btn"
+              className="modal-qty-btn"
             >
               +
             </button>
           </div>
 
-          <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn">Checkout</button>
+          <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn" style={{ marginTop: '10px' }}>Checkout</button>
         </div>
       </div>
     )}

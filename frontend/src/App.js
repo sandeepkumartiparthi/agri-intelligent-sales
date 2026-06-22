@@ -1,4 +1,4 @@
-import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck, Package, HelpCircle} from 'lucide-react';
+import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck, HelpCircle} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import AIAgent from './components/AIAgent';
 import axios from 'axios';
@@ -12,7 +12,6 @@ export default function App() {
   const [fertilizers, setFertilizers] = useState([]);
   const [checkoutMode, setCheckoutMode] = useState(null); // null | 'details' | 'confirm'
   const [orderConfirm, setOrderConfirm] = useState(null);
-  const [addressInput, setAddressInput] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', phno: '', quantity: 1 });
   const [arbitrage, setArbitrage] = useState({});

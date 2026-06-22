@@ -361,12 +361,22 @@ const deleteListing = async (id) => {
     setActiveTab('Home');
   };
 
-  // 🌟 MARKETPLACE PURCHASE HANDLER
+// 🌟 MARKETPLACE PURCHASE HANDLER
   const processPurchase = async (prod) => {
-    if(!checkoutData.address || !checkoutData.name || !checkoutData.phno) return alert("Fill all details!");
-    const res = await axios.post('/api/checkout', { productId: prod.id, ...checkoutData });
-    setOrderConfirm(res.data);
-    setCheckoutMode('confirm');
+    if (!checkoutData.address || !checkoutData.name || !checkoutData.phno) {
+      return alert("Fill all details!");
+    }
+    
+    try {
+      setIsGraphLoading(true); // Shows a loader while the backend processes the order
+      const res = await axios.post('https://agri-intelligent-sales.onrender.com/api/checkout', { productId: prod.id, ...checkoutData });
+      setOrderConfirm(res.data);
+      setCheckoutMode('confirm'); // Switches the modal slab to the order confirmation view
+    } catch (err) {
+      alert("Checkout processing error from backend.");
+    } finally {
+      setIsGraphLoading(false);
+    }
   };
 
   const axisLabels = getTimelineLabelsXAxis();
@@ -914,14 +924,32 @@ const deleteListing = async (id) => {
       </main>
 
 {/* Checkout Modal */}
-    {selectedProduct && (
-      <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
-        <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
+{selectedProduct && (
+  <div className="modal-backdrop" onClick={() => { setSelectedProduct(null); setCheckoutMode(null); }}>
+    <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
+      {checkoutMode === 'confirm' ? (
+        <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '64px', height: '64px', margin: '0 auto 15px', filter: 'drop-shadow(0 0 8px rgba(52, 211, 153, 0.3))' }}>
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '10px', color: '#34d399' }}>Order Confirmed!</h2>
+          <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '6px' }}>Order ID: <b>{orderConfirm?.orderId || 'IRSA-XXXX'}</b></p>
+          <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '20px' }}>Estimated Delivery: <b>{orderConfirm?.deliveryDate || '2-3 Business Days'}</b></p>
+          <button 
+            onClick={() => { setSelectedProduct(null); setCheckoutMode(null); }} 
+            className="form-submit-btn"
+          >
+            Close & Return
+          </button>
+        </div>
+      ) : (
+        <>
           <h3>Purchase: {selectedProduct.name}</h3>
           
-          <input className="glass-input" placeholder="Name" onChange={e => setCheckoutData({...checkoutData, name: e.target.value})} />
-          <input className="glass-input" placeholder="Address" onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
-          <input className="glass-input" placeholder="Phone" onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
+          <input className="glass-input" placeholder="Name" value={checkoutData.name} onChange={e => setCheckoutData({...checkoutData, name: e.target.value})} />
+          <input className="glass-input" placeholder="Address" value={checkoutData.address} onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
+          <input className="glass-input" placeholder="Phone" value={checkoutData.phno} onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
           
           {/* 🌟 RESTRUCTURED QUANTITY ROW */}
           <div className="modal-qty-row">
@@ -944,28 +972,29 @@ const deleteListing = async (id) => {
           </div>
 
           <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn" style={{ marginTop: '10px' }}>Checkout</button>
+        </>
+      )}
+    </div>
+  </div>
+)}
+
+{selectedListing && (
+  <div className="modal-backdrop" onClick={() => setSelectedListing(null)}>
+    <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
+      <div className="modal-body">
+        <button className="close-btn" onClick={() => setSelectedListing(null)}>×</button>
+        <h3 className="section-title mb-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)', paddingBottom:'10px'}}>{selectedListing.cropName} Batch Details</h3>
+        {selectedListing.imageStream && <img src={selectedListing.imageStream} className="modal-img" alt="Yield tracking vector asset"/>}
+        <div className="vertical-form" style={{fontSize:'14px', gap:'10px', color:'#cbd5e1'}}>
+          <p><strong>Producer Account Name:</strong> {selectedListing.farmerName}</p>
+          <p><strong>Available Cargo Quantity:</strong> <span style={{color:'#34d399', fontWeight:700}}>{selectedListing.quantity} Quintals</span></p>
+          <p><strong>Regional Hub Depot Location:</strong> {selectedListing.locationText}</p>
+          <a href={selectedListing.mapLink} target="_blank" rel="noreferrer" className="map-btn"><MapPin size={13}/> Open Google Maps Navigation Route</a>
         </div>
       </div>
-    )}
-
-      {selectedListing && (
-        <div className="modal-backdrop" onClick={() => setSelectedListing(null)}>
-          <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-body">
-              <button className="close-btn" onClick={() => setSelectedListing(null)}>×</button>
-              <h3 className="section-title mb-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)', paddingBottom:'10px'}}>{selectedListing.cropName} Batch Details</h3>
-              {selectedListing.imageStream && <img src={selectedListing.imageStream} className="modal-img" alt="Yield tracking vector asset"/>}
-              <div className="vertical-form" style={{fontSize:'14px', gap:'10px', color:'#cbd5e1'}}>
-                <p><strong>Producer Account Name:</strong> {selectedListing.farmerName}</p>
-                <p><strong>Available Cargo Quantity:</strong> <span style={{color:'#34d399', fontWeight:700}}>{selectedListing.quantity} Quintals</span></p>
-                <p><strong>Regional Hub Depot Location:</strong> {selectedListing.locationText}</p>
-                <a href={selectedListing.mapLink} target="_blank" rel="noreferrer" className="map-btn"><MapPin size={13}/> Open Google Maps Navigation Route</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-        {/* ... your existing JSX ... */}
+    </div>
+  </div>
+)}
       
       {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
       <AIAgent marketData={marketPrices} />

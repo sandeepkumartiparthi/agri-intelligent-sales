@@ -775,41 +775,37 @@ body {
 }
 
 /* Container for all listing boxes */
-.listings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Responsive grid */
-    gap: 20px;
-    padding: 20px;
-}
-
-/* The rectangular box style */
-.listings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Increases minimum width of boxes */
-    gap: 25px; /* Adjusts spacing between boxes */
-    padding: 30px;
-}
-
-.listing-card {
-    background: rgba(255, 255, 255, 0.08); /* Glass effect */
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px; /* Softer rounded corners */
-    padding: 30px; /* Increases internal space to make the box larger */
-    color: white;
-    min-height: 180px; /* Guarantees a taller box size */
+.modal-qty-row {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     justify-content: space-between;
-    transition: transform 0.3s ease, border-color 0.3s ease;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: white;
+    margin-top: 5px;
 }
 
-.listing-card:hover {
-    transform: scale(1.03); /* Slight zoom on hover */
-    border-color: #34d399; /* Matches your IRSA green brand color */
+.modal-qty-btn {
+    background: #334155;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
 }
 
+.modal-qty-btn:hover {
+    background: #475569;
+}
 /* Change this to match your brand colors */
 .tab-btn.active-tab {
     background: #34d399; /* This will make it green instead of white */

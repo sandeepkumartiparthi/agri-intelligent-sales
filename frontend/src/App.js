@@ -838,16 +838,40 @@ const deleteListing = async (id) => {
 
       </main>
 
-      {/* Checkout Modal */}
-      {selectedProduct && (
-        <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
-          <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
-            <h3>Purchase: {selectedProduct.name}</h3>
-            <input className="glass-input" placeholder="Name" onChange={e => setCheckoutData({...checkoutData, name: e.target.value})} />
-            <input className="glass-input" placeholder="Address" onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
-            <input className="glass-input" placeholder="Phone" onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
-            <input type="number" className="glass-input" placeholder="Qty" onChange={e => setCheckoutData({...checkoutData, quantity: e.target.value})} />
-            <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn">Checkout</button>
+  {/* Checkout Modal */}
+    {selectedProduct && (
+      <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
+        <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
+          <h3>Purchase: {selectedProduct.name}</h3>
+          
+          <input className="glass-input" placeholder="Name" onChange={e => setCheckoutData({...checkoutData, name: e.target.value})} />
+          <input className="glass-input" placeholder="Address" onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
+          <input className="glass-input" placeholder="Phone" onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
+          
+          {/* 🌟 QUANTITY CONTROLLER WITH PLUS/MINUS LOCK */}
+          <div className="quantity-control-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '15px', margin: '10px 0' }}>
+            <span style={{ color: '#fff', fontSize: '14px' }}>Quantity:</span>
+            <button 
+              type="button" 
+              onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Math.max(1, Number(prev.quantity) - 1) }))}
+              className="qty-btn"
+            >
+              -
+            </button>
+            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '16px' }}>{checkoutData.quantity || 1}</span>
+            <button 
+              type="button" 
+              onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Number(prev.quantity) + 1 }))}
+              className="qty-btn"
+            >
+              +
+            </button>
+          </div>
+
+          <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn">Checkout</button>
+        </div>
+      </div>
+    )}
           </div>
         </div>
       )}

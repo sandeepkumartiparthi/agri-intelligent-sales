@@ -87,6 +87,17 @@ const initializeCacheMatrix = () => {
 };
 initializeCacheMatrix();
 
+
+app.post('/api/auth/google', async (req, res) => {
+  const { role } = req.body;
+  // Your authentication logic here...
+  res.json({ 
+    success: true, 
+    token: "mock-token", 
+    user: { name: "Google User", role } 
+  });
+});
+
 // --- 🤖 DYNAMIC AI AGENT BRAIN ---
 app.post('/api/ai-chat', async (req, res) => {
     const { prompt, data } = req.body;

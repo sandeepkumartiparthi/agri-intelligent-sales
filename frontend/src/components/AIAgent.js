@@ -46,6 +46,7 @@ const AIAgent = ({ marketData }) => {
         if (done) break;
         aiReply += decoder.decode(value, { stream: true });
         
+        // eslint-disable-next-line no-loop-func
         setMessages(prev => {
           const newMsgs = [...prev];
           newMsgs[newMsgs.length - 1].text = aiReply;
@@ -88,4 +89,5 @@ const AIAgent = ({ marketData }) => {
     </div>
   );
 };
+
 export default AIAgent;

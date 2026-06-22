@@ -775,36 +775,41 @@ body {
 }
 
 /* Container for all listing boxes */
+.modal-slab-content {
+    background: #1e293b; 
+    color: #fff; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 24px; /* Increases spacing between inputs */
+    padding: 45px; /* Increases internal padding making the box larger */
+    border-radius: 20px;
+    width: 90%;
+    max-width: 480px; /* Increases the maximum width of the box */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+
+.glass-input {
+    padding: 16px; /* Makes input fields taller/larger */
+    font-size: 15px;
+    border-radius: 10px;
+}
+
 .modal-qty-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 12px 16px;
+    padding: 16px 20px; /* Expands the quantity box size */
     border-radius: 12px;
-    color: white;
-    margin-top: 5px;
+    font-size: 16px;
 }
 
 .modal-qty-btn {
-    background: #334155;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s ease;
+    width: 44px; /* Makes plus/minus buttons larger */
+    height: 44px;
+    font-size: 20px;
 }
 
-.modal-qty-btn:hover {
-    background: #475569;
+.form-submit-btn {
+    padding: 16px; /* Makes the checkout button larger/taller */
+    font-size: 16px;
+    border-radius: 10px;
 }
 /* Change this to match your brand colors */
 .tab-btn.active-tab {

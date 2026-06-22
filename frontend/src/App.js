@@ -2,8 +2,6 @@ import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin
 import { useEffect, useRef, useState } from 'react';
 import AIAgent from './components/AIAgent';
 import axios from 'axios';
-import { auth, googleProvider } from './firebase';
-import { signInWithPopup } from 'firebase/auth';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Home');

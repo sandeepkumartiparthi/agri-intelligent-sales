@@ -872,9 +872,6 @@ const deleteListing = async (id) => {
         </div>
       </div>
     )}
-          </div>
-        </div>
-      )}
 
       {selectedListing && (
         <div className="modal-backdrop" onClick={() => setSelectedListing(null)}>

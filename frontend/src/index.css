@@ -783,25 +783,31 @@ body {
 }
 
 /* The rectangular box style */
+.listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Increases minimum width of boxes */
+    gap: 25px; /* Adjusts spacing between boxes */
+    padding: 30px;
+}
+
 .listing-card {
-    background: rgba(255, 255, 255, 0.1); /* Glass effect */
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.08); /* Glass effect */
+    backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
-    padding: 20px;
+    border-radius: 20px; /* Softer rounded corners */
+    padding: 30px; /* Increases internal space to make the box larger */
     color: white;
-    transition: transform 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    min-height: 180px; /* Guarantees a taller box size */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 .listing-card:hover {
-    transform: scale(1.02); /* Slight zoom on hover */
-    border-color: #3b82f6;
-}
-
-.listing-card h3 {
-    margin-top: 0;
-    color: #fbbf24; /* Gold accent for crop name */
+    transform: scale(1.03); /* Slight zoom on hover */
+    border-color: #34d399; /* Matches your IRSA green brand color */
 }
 
 /* Change this to match your brand colors */

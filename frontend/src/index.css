@@ -801,9 +801,10 @@ body {
 }
 
 .modal-qty-btn {
-    width: 44px; /* Makes plus/minus buttons larger */
-    height: 44px;
-    font-size: 20px;
+    width: 32px;  /* Decreases button width */
+    height: 32px; /* Decreases button height */
+    font-size: 14px; /* Shrinks the +/- sign inside */
+    border-radius: 6px;
 }
 
 .form-submit-btn {

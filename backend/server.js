@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs'); // 🌟 NEW UPDATION: Mount high-security comparative encryption maps
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client("648741837176-4hlphht3dkrmccqk6p0180l7jmth9akr.apps.googleusercontent.com");
 const app = express();
 
 // --- ☁️ DATABASE CONNECTION ---
@@ -87,15 +89,45 @@ const initializeCacheMatrix = () => {
 };
 initializeCacheMatrix();
 
+app.post('/api/auth/google-verify', async (req, res) => {
+  const { credential, role } = req.body;
 
-app.post('/api/auth/google', async (req, res) => {
-  const { role } = req.body;
-  // Your authentication logic here...
-  res.json({ 
-    success: true, 
-    token: "mock-token", 
-    user: { name: "Google User", role } 
-  });
+  // Enforce authorized system roles only
+  if (role !== 'farmer' && role !== 'merchant') {
+    return res.status(400).json({ success: false, message: "Invalid system role selected." });
+  }
+
+  try {
+    // 1. Verify the secure JWT token sent from the frontend native popup
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: "648741837176-4hlphht3dkrmccqk6p0180l7jmth9akr.apps.googleusercontent.com",
+    });
+    
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name;
+
+    // 2. Your Authentication Logic: 
+    // Check your database if the user exists, or create a new master account for them.
+    // let user = await User.findOne({ email });
+    // if (!user) { user = await User.create({ name, email, role, method: 'google' }); }
+
+    // Mock response matching your frontend expectation
+    res.json({ 
+      success: true, 
+      token: "your-generated-jwt-session-token", 
+      user: { 
+        name: name, 
+        email: email, 
+        role: role 
+      } 
+    });
+
+  } catch (error) {
+    console.error("Google token verification failed:", error.message);
+    res.status(401).json({ success: false, message: "Unauthorized Google token verification failure." });
+  }
 });
 
 // --- 🤖 DYNAMIC AI AGENT BRAIN ---

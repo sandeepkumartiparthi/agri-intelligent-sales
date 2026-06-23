@@ -89,6 +89,49 @@ const initializeCacheMatrix = () => {
 };
 initializeCacheMatrix();
 
+// 🌟 HYPER-LOCAL WEATHER TELEMETRY & RISK ENGINE
+app.post('/api/climate/risk-matrix', async (req, res) => {
+  const { location } = req.body; // e.g. "Tadepalligudem"
+  const apiKey = process.env.OPENWEATHER_KEY;// Your active 100% free key injected here
+  
+  try {
+    const weatherAPI = await axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&units=metric&appid=${apiKey}`);
+    const temp = weatherAPI.data.main.temp; // Celsius
+    const humidity = weatherAPI.data.main.humidity; // Percentage
+    
+    // Rule engine for spoilage risk: Temperature > 35C and high humidity
+    let riskLevel = 'stable';
+    let riskScore = 20;
+    let recommendation = 'Standard Monitoring. Conditions optimal for asset storage.';
+
+    if (temp > 35 && humidity > 75) {
+      riskLevel = 'critical';
+      riskScore = 85;
+      recommendation = 'Immediate Harvest or Cold-Chain Transfer required. High spoilage risk.';
+    } else if (temp > 30 || humidity > 65) {
+      riskLevel = 'caution';
+      riskScore = 55;
+      recommendation = 'Monitor closely. Elevated ambient heat and moisture detected.';
+    }
+    
+    res.json({ 
+      success: true, 
+      temp, 
+      humidity, 
+      score: riskScore,
+      riskLevel: riskLevel,
+      location: weatherAPI.data.name,
+      recommendation: recommendation,
+      message: riskLevel !== 'stable' 
+        ? `⚠️ Regional Agro-Climate Alert: Spoilage risks flagged for ${weatherAPI.data.name}. Review storage telemetry.` 
+        : `✅ Climate conditions at ${weatherAPI.data.name} within safe parameters.`
+    });
+  } catch (e) {
+    // Captures misspellings, unindexed rural city searches, or API activation delays
+    res.status(500).json({ success: false, message: "Hyper-local telemetry lookup failure. Check city spelling or allow up to 20 mins for key activation." });
+  }
+});
+
 app.post('/api/auth/google-verify', async (req, res) => {
   const { credential, role } = req.body;
 

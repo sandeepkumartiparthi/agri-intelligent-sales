@@ -428,7 +428,7 @@ const deleteListing = async (id) => {
   {user && user.role === 'farmer' && (
     <>
       <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>
-      <button onClick={() => { setActiveTab('Pro Tools'); axios.get('/api/arbitrage-scanner').then(r => setArbitrage(r.data)); }} className={`tab-btn ${activeTab === 'Pro Tools' ? 'active-tab' : ''}`}><Sparkles size={15}/> <span>Pro Tools</span></button>
+      <button onClick={() => setActiveTab('Agro-Climate Risk')} className={`tab-btn ${activeTab === 'Agro-Climate Risk' ? 'active-tab' : ''}`}> <span>⛅ Climate Risk Matrix</span></button>
       <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>
     </>
   )}
@@ -474,32 +474,66 @@ const deleteListing = async (id) => {
              )}
            </div>
         )}
+{activeTab === 'Agro-Climate Risk' && (
+  <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
+    <h2 className="section-title text-center" style={{ color: '#fff', marginBottom: '10px' }}>Agro-Climate Risk Matrix</h2>
+    <p className="section-subtitle text-center" style={{ color: '#94a3b8', marginBottom: '30px' }}>Real-time telemetric 72-hour spoilage and stress assessment for your district cargo.</p>
+    
+    <div className="filter-group mb-8" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '30px' }}>
+      <input 
+        type="text" 
+        id="risk-location" 
+        className="glass-input" 
+        placeholder="Enter District/City (e.g. Tadepalligudem)..." 
+        style={{ width: '65%', background: '#0f172a', color: '#fff' }}
+      />
+      <button 
+        onClick={async () => {
+          const loc = document.getElementById('risk-location').value;
+          if (!loc.trim()) return alert("Please enter a valid district or geographic city hub name.");
+          
+          try {
+            setIsGraphLoading(true);
+            // Calls your Render backend endpoint
+            const res = await axios.post('https://agri-intelligent-sales.onrender.com/api/climate/risk-matrix', { location: loc });
+            setAdvisorResult(res.data); // Stores the returning metric payloads safely
+          } catch (e) {
+            alert("Hyper-local telemetry lookup failure. Check server or API key.");
+          } finally {
+            setIsGraphLoading(false);
+          }
+        }} 
+        className="primary-action-btn"
+        style={{ padding: '0 20px', background: '#06b6d4', border: 'none', color: '#0f172a' }}
+      >
+        {isGraphLoading ? 'Scanning...' : 'Analyze Risk'}
+      </button>
+    </div>
 
-        {/* --- 🛠️ PRO TOOLS: ARBITRAGE & PROFIT --- */}
-        {activeTab === 'Pro Tools' && (
-          <div className="animated-entrance split-grid">
-            <div className="glass-slab">
-              <h2 className="section-title">Arbitrage Scanner</h2>
-              {Object.entries(arbitrage).map(([crop, data]) => <p key={crop}>{crop}: <strong>₹{data.price}</strong> at {data.mandi}</p>)}
-            </div>
-            <div className="glass-slab">
-              <h2 className="section-title">Profit Ledger</h2>
-              <input type="number" className="glass-input" placeholder="Yield Qty" onChange={e => axios.post('/api/calculate-profit', { yieldQty: e.target.value, inputCost: 2000, marketPrice: 2200 }).then(r => setFinance(r.data))} />
-              <p>Profit: ₹{finance.profit} | Credit Score: {finance.creditScore}</p>
-            </div>
-            <div className="glass-slab">
-              <h2 className="section-title">AI Crop Advisor</h2>
-              <select className="glass-input" onChange={e => setAdvisorForm({...advisorForm, soilType: e.target.value})}>
-                <option value="clay">Clay Soil</option>
-                <option value="sandy">Sandy Soil</option>
-              </select>
-              <input type="number" className="glass-input" placeholder="Kg Fertilizer" onChange={e => setAdvisorForm({...advisorForm, fertilizerKg: e.target.value})} />
-              <button onClick={async () => { const res = await axios.post('/api/crop-advisor', advisorForm); setAdvisorResult(res.data); }} className="primary-action-btn">Calculate</button>
-              {advisorResult && <p>{advisorResult.recommendation}</p>}
-            </div>
+    {/* Dynamic Traffic Light Matrix Cards */}
+    {advisorResult && (
+      <div className="risk-grid animated-entrance" style={{ display: 'grid', gap: '20px' }}>
+        <div className={`risk-card ${advisorResult.riskLevel?.toLowerCase() || 'stable'}`} style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="risk-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>Telemetry Survey for {advisorResult.location || 'Selected Coordinates'}</h3>
+            <span className="risk-badge" style={{ padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '12px', background: 'rgba(0,0,0,0.3)', color: '#fff', letterSpacing: '0.5px' }}>
+              {advisorResult.riskLevel} (Score: {advisorResult.score}/100)
+            </span>
           </div>
-        )}
-
+          
+          <div className="stats-row" style={{ display: 'flex', gap: '30px', margin: '20px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
+            <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Micro-climate Temperature</small><p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>{advisorResult.temp}°C</p></div>
+            <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Ambient Air Humidity</small><p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>{advisorResult.humidity}%</p></div>
+          </div>
+          
+          <p className="risk-advice" style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.5', marginTop: '15px', fontWeight: 600 }}>
+            💼 Recommendation Protocol: {advisorResult.recommendation}
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+)}
         {activeTab === 'Home' && (
           <div className="glass-slab animated-entrance">
             <h1 className="hero-heading">IRSA — Intelligent <br/><span className="gradient-text">Resource Ecosystem</span></h1>

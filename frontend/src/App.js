@@ -14,10 +14,6 @@ export default function App() {
   const [orderConfirm, setOrderConfirm] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', phno: '', quantity: 1 });
-  const [arbitrage, setArbitrage] = useState({});
-  const [finance, setFinance] = useState({ profit: 0, creditScore: 0 });
-  const [advisorResult, setAdvisorResult] = useState(null);
-  const [advisorForm, setAdvisorForm] = useState({ fertilizerKg: 0, waterLevel: 0, soilType: 'clay', cropName: 'Paddy' });
   
   // 🌟 RESTRUCTURED PRICE HISTORY STATES MATRIX
   const [forecastCrop, setForecastCrop] = useState('Maize');

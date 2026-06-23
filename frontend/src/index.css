@@ -819,3 +819,30 @@ body {
     border-radius: 6px;
     font-weight: 700;
 }
+/* --- TRAFFIC LIGHT RISK MATRIX STYLES --- */
+.risk-card.critical { 
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(153, 27, 27, 0.15)); 
+  border-color: #ef4444; 
+}
+.risk-card.critical .risk-badge { 
+  color: #fca5a5; 
+  border: 1px solid #fca5a5; 
+}
+
+.risk-card.caution { 
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(180, 83, 9, 0.15)); 
+  border-color: #f59e0b; 
+}
+.risk-card.caution .risk-badge { 
+  color: #fcd34d; 
+  border: 1px solid #fcd34d; 
+}
+
+.risk-card.stable { 
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(6, 95, 70, 0.15)); 
+  border-color: #10b981; 
+}
+.risk-card.stable .risk-badge { 
+  color: #6ee7b7; 
+  border: 1px solid #6ee7b7; 
+}

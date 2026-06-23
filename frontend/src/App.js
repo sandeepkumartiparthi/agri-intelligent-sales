@@ -30,7 +30,7 @@ export default function App() {
   // Auth contexts
   const [user, setUser] = useState(null); 
   const [isSignUp, setIsSignUp] = useState(false);
-  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', role: 'farmer' });
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'farmer' });
   const [authError, setAuthError] = useState('');
 
   // Business operational listings
@@ -806,7 +806,17 @@ const deleteListing = async (id) => {
       {isSignUp ? "Create Secure Account" : "Identity Authentication Check"}
     </h2>
     
-    <form onSubmit={handleAuthSubmit} className="vertical-form">
+    <form 
+      onSubmit={async (e) => {
+        e.preventDefault();
+        // 🌟 CONFIRM PASSWORD VALIDATION CHECK
+        if (isSignUp && authForm.password !== authForm.confirmPassword) {
+          return alert("Authorization Refused: Passwords do not match.");
+        }
+        await handleAuthSubmit(e);
+      }} 
+      className="vertical-form"
+    >
       {isSignUp && (
         <div className="input-block">
           <label>Full Identification Name</label>
@@ -821,6 +831,21 @@ const deleteListing = async (id) => {
         <label>Password</label>
         <input type="password" className="glass-input" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})}/>
       </div>
+      
+      {/* 🌟 CONFIRM PASSWORD COLUMN (Visible only during signup) */}
+      {isSignUp && (
+        <div className="input-block animated-entrance">
+          <label>Confirm Authorized Password</label>
+          <input 
+            type="password" 
+            className="glass-input" 
+            required 
+            value={authForm.confirmPassword || ''} 
+            onChange={e => setAuthForm({...authForm, confirmPassword: e.target.value})}
+          />
+        </div>
+      )}
+
       <div className="input-block">
         <label>Authorized System Role</label>
         <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{background:'#0f172a'}}>

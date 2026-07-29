@@ -1,9 +1,10 @@
 import { ArrowUpRight, HelpCircle, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import AIAgent from './components/AIAgent';
+import CropHistory from './CropHistory'; // 🌟 Clean component import
 import axios from 'axios';
 
-// 🌟 AXIOS SECURITY & AUTH INTERCEPTORS (OUTSIDE APP TO PREVENT DUPLICATE REGISTRATIONS)
+// 🌟 AXIOS SECURITY & AUTH INTERCEPTORS
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('irsa_session_token');
@@ -38,14 +39,7 @@ export default function App() {
   const [orderConfirm, setOrderConfirm] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', phno: '', quantity: 1 });
-
-  // PRICE HISTORY STATES MATRIX
-  const [forecastCrop, setForecastCrop] = useState('Maize');
-  const [forecastData, setForecastData] = useState([]);
-  const [historyScope, setHistoryScope] = useState('1Y'); // Managed ranges: '1M' | '6M' | '1Y' | '5Y'
-  const [historyMeta, setHistoryPayloadMeta] = useState({ lowest: 0, average: 0, highest: 0, source: 'Initializing...', timestamp: '...' });
   const [isGraphLoading, setIsGraphLoading] = useState(false);
-  const [hoveredPoint, setHoveredPoint] = useState(null);
 
   // Auth contexts
   const [user, setUser] = useState(null); 
@@ -151,13 +145,6 @@ export default function App() {
     }
   }, [activeTab]);
 
-  // 1. DYNAMIC TAB & CROP SYNC EFFECT
-  useEffect(() => {
-    if (activeTab === 'Price History' && forecastCrop && forecastCrop.trim() !== '') {
-      generatePriceHistoryCurve(forecastCrop, historyScope);
-    }
-  }, [historyScope, activeTab, forecastCrop]);
-
   const fetchMarketPrices = async () => {
     try {
       const res = await fetch('/api/market-prices', { headers: getSecurityHeaders() });
@@ -166,7 +153,7 @@ export default function App() {
     } catch (e) { console.error("Market prices fetch error:", e); }
   };
 
-  // 2. REAL-TIME SEARCH TRIGGER (SYNCS SEARCH TABLE & HISTORY GRAPH)
+  // REAL-TIME SEARCH TRIGGER (SYNCS SEARCH TABLE)
   const handleLiveSearchTrigger = (e) => {
     const queryText = e.target.value;
     setFilterCrop(queryText);
@@ -183,12 +170,10 @@ export default function App() {
       const trimmedQuery = queryText.trim();
       if (trimmedQuery.length > 1) {
         try {
-          setForecastCrop(trimmedQuery);
-
           const res = await fetch('/api/history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ crop: trimmedQuery, range: historyScope || '1Y' })
+            body: JSON.stringify({ crop: trimmedQuery, range: '1Y' })
           });
           
           const data = await res.json();
@@ -247,57 +232,6 @@ export default function App() {
         setAdminUsers([]);
       }
     } catch (e) { setAdminUsers([]); }
-  };
-
-  // 3. GENERATE PRICE HISTORY CURVE (DYNAMIC & FAILSAFE)
-  const generatePriceHistoryCurve = async (targetCropName = forecastCrop, selectedRange = historyScope) => {
-    const target = (targetCropName || forecastCrop || '').trim();
-    if (!target) return;
-
-    try {
-      setIsGraphLoading(true);
-      setHoveredPoint(null);
-      
-      const res = await fetch('/api/history', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ crop: target, range: selectedRange })
-      });
-      
-      const data = await res.json();
-      if (data && data.success) {
-        setForecastData(data.historicalPointsArray || []);
-        setHistoryPayloadMeta({
-          lowest: data.lowest || 0,
-          average: data.average || 0,
-          highest: data.highest || 0,
-          source: data.source || 'Agmarknet Index',
-          timestamp: data.timestamp || new Date().toLocaleDateString('en-IN')
-        });
-      }
-    } catch (e) { 
-      console.error("History retrieval interrupted:", e); 
-    } finally { 
-      setIsGraphLoading(false); 
-    }
-  };
-
-  // 4. DYNAMIC X-AXIS TIMELINE LABELS
-  const getTimelineLabelsXAxis = () => {
-    const pointsCount = forecastData.length;
-    if (pointsCount === 0) return [];
-    
-    const labels = [];
-    for (let i = 1; i <= pointsCount; i++) {
-      if (historyScope === '1M') labels.push(`Day ${i}`);
-      else if (historyScope === '6M') labels.push(`Wk ${i}`);
-      else if (historyScope === '1Y') labels.push(`M-${i}`);
-      else if (historyScope === '5Y') labels.push(`Yr ${i}`);
-      else labels.push(`P-${i}`);
-    }
-    
-    labels[labels.length - 1] = "Live Spot";
-    return labels;
   };
 
   const handleAuthSubmit = async (e) => {
@@ -424,8 +358,6 @@ export default function App() {
       setIsGraphLoading(false);
     }
   };
-
-  const axisLabels = getTimelineLabelsXAxis();
 
   return (
     <div className="irsa-app-wrapper">
@@ -765,153 +697,9 @@ export default function App() {
           </div>
         )}
 
-        {/* PRICE HISTORY SECTION */}
+        {/* PRICE HISTORY SECTION (CLEAN COMPONENT MOUNT) */}
         {activeTab === 'Price History' && (
-          <div className="glass-slab animated-entrance" style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div>
-                <h2 className="section-title">Price History Graph</h2>
-                <div style={{ display: 'flex', gap: '20px', fontSize: '14px', marginTop: '4px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
-                    <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#ef4444' }}></span>
-                    Offer Price
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8' }}>
-                    <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#06b6d4' }}></span>
-                    Prices (₹)
-                  </span>
-                </div>
-              </div>
-
-              <div className="filter-group">
-                <input 
-                  type="text" className="glass-input" style={{ width: '240px' }} 
-                  value={forecastCrop} onChange={e => setForecastCrop(e.target.value)} 
-                  placeholder="Type crop name (e.g. Maize)..."
-                />
-                <button onClick={() => generatePriceHistoryCurve(forecastCrop, historyScope)} className="primary-action-btn">Fetch History</button>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: '12px 24px', borderRadius: '6px 6px 0 0', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#94a3b8' }}>
-              <div>Lowest: <span style={{ color: '#ef4444', fontWeight: 'bold' }}>₹{historyMeta.lowest.toLocaleString('en-IN')}</span></div>
-              <div>Average: <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>₹{historyMeta.average.toLocaleString('en-IN')}</span></div>
-              <div>Highest: <span style={{ color: '#10b981', fontWeight: 'bold' }}>₹{historyMeta.highest.toLocaleString('en-IN')}</span></div>
-            </div>
-
-            <div 
-              style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none', position: 'relative' }}
-              onMouseMove={(e) => {
-                if (!forecastData || forecastData.length <= 1) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const totalPoints = forecastData.length - 1;
-                const idx = Math.max(0, Math.min(totalPoints, Math.round((x / rect.width) * totalPoints)));
-
-                if (forecastData[idx] !== undefined) {
-                  setHoveredPoint({ 
-                    x: (idx / totalPoints) * 1000, 
-                    val: forecastData[idx], 
-                    date: axisLabels[idx] || 'Live Spot' 
-                  });
-                }
-              }}
-              onMouseLeave={() => setHoveredPoint(null)}
-            >
-              {hoveredPoint && (
-                <div style={{ position: 'absolute', left: `${Math.min(85, Math.max(5, (hoveredPoint.x / 1000) * 90))}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10, pointerEvents: 'none' }}>
-                  {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
-                </div>
-              )}
-
-              {isGraphLoading && (
-                <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
-                  Re-indexing verified marketplace timeline arrays...
-                </div>
-              )}
-
-              <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
-                <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
-                      <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
-                    </linearGradient>
-                  </defs>
-
-                  <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
-                  <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
-                  <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
-
-                  {forecastData && forecastData.length > 1 && (
-                    <>
-                      <path
-                        d={`M ${forecastData.map((val, idx) => {
-                          const x = (idx / (forecastData.length - 1)) * 1000;
-                          const padFloor = (historyMeta.lowest || 0) * 0.8;
-                          const padCeil = (historyMeta.highest || 100) * 1.2;
-                          const range = (padCeil - padFloor) || 1;
-                          const y = 260 - (((val - padFloor) / range) * 260);
-                          return `${x} ${isNaN(y) ? 130 : y}`;
-                        }).join(' L ')}`}
-                        fill="none"
-                        stroke="#06b6d4"
-                        strokeWidth="3"
-                      />
-                      <path
-                        d={`M 0 260 L ${forecastData.map((val, idx) => {
-                          const x = (idx / (forecastData.length - 1)) * 1000;
-                          const padFloor = (historyMeta.lowest || 0) * 0.8;
-                          const padCeil = (historyMeta.highest || 100) * 1.2;
-                          const range = (padCeil - padFloor) || 1;
-                          const y = 260 - (((val - padFloor) / range) * 260);
-                          return `${x} ${isNaN(y) ? 130 : y}`;
-                        }).join(' L ')} L 1000 260 Z`}
-                        fill="url(#frontAreaGradient)"
-                      />
-                    </>
-                  )}
-                </svg>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingLeft: '6px' }}>
-                {axisLabels.map((item, index) => (
-                  <div key={index} style={{ fontSize: '10px', color: '#475569', transform: 'rotate(-20deg)', whiteSpace: 'nowrap' }}>
-                    {item}
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-                {[
-                  { key: '1M', text: '1 Month' },
-                  { key: '6M', text: '6 Months' },
-                  { key: '1Y', text: '1 Year Full View' },
-                  { key: '5Y', text: '5 Years Macro View' }
-                ].map(item => (
-                  <button
-                    key={item.key}
-                    onClick={() => setHistoryScope(item.key)}
-                    className="secondary-action-btn"
-                    style={{
-                      backgroundColor: historyScope === item.key ? '#06b6d4' : 'rgba(30,41,59,0.5)',
-                      color: historyScope === item.key ? '#0f172a' : '#cbd5e1',
-                      border: historyScope === item.key ? '1px solid #06b6d4' : '1px solid #334155',
-                      padding: '6px 14px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {item.text}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ marginTop: '20px', fontSize: '11px', color: '#475569', fontFamily: 'Consolas, monospace' }}>
-                Data Trace Channel: {historyMeta.source} | Last Update Event Block: {historyMeta.timestamp}
-              </div>
-            </div>
-          </div>
+          <CropHistory />
         )}
 
         {/* AUTH PORTAL SECTION */}

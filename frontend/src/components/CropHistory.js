@@ -154,30 +154,46 @@ export default function CropHistory() {
                     const idx = Math.max(0, Math.min(totalPoints, Math.round((x / rect.width) * totalPoints)));
 
                     if (pointsArray[idx] !== undefined) {
+                        const val = pointsArray[idx];
+                        const minCeil = (telemetryPayload?.lowest || 0) * 0.8;
+                        const maxCeil = (telemetryPayload?.highest || 100) * 1.2;
+                        const range = (maxCeil - minCeil) || 1;
+                        
+                        // Exact Y pixel calculation matching the SVG viewBox height (320px)
+                        const ySvg = 320 - (((val - minCeil) / range) * 320);
+
                         setHoveredPoint({ 
-                            x: (idx / totalPoints) * 1000, 
-                            val: pointsArray[idx], 
+                            xSvg: (idx / totalPoints) * 1000,
+                            ySvg: isNaN(ySvg) ? 160 : ySvg,
+                            xPercent: (idx / totalPoints) * 100,
+                            yPercent: ((isNaN(ySvg) ? 160 : ySvg) / 320) * 100,
+                            val: val, 
                             date: axisLabels[idx] || 'Live Spot' 
                         });
                     }
                 }}
                 onMouseLeave={() => setHoveredPoint(null)}
             >
+                {/* DYNAMIC HOVER TOOLTIP (BOUND DIRECTLY TO GRAPH LINE VERTICALLY) */}
                 {hoveredPoint && (
                     <div style={{ 
                         position: 'absolute', 
-                        left: `${Math.min(85, Math.max(5, (hoveredPoint.x / 1000) * 90))}%`, 
-                        top: '15px', 
+                        left: `${hoveredPoint.xPercent}%`, 
+                        top: `calc(${hoveredPoint.yPercent}% + 40px)`, // Offset matches container padding
+                        transform: 'translate(-50%, -130%)', // Keeps badge floating centered above line
                         background: '#1E293B', 
                         border: '1px solid #06B6D4', 
-                        padding: '8px 14px', 
+                        padding: '6px 14px', 
                         borderRadius: '6px', 
                         color: '#FFF', 
                         fontSize: '13px', 
-                        zIndex: 10, 
-                        pointerEvents: 'none' 
+                        fontWeight: 'bold',
+                        zIndex: 20, 
+                        pointerEvents: 'none',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+                        whiteSpace: 'nowrap'
                     }}>
-                        {hoveredPoint.date}: <strong style={{ color: '#06B6D4' }}>₹{hoveredPoint.val.toLocaleString('en-IN')}</strong>
+                        {hoveredPoint.date}: <span style={{ color: '#06B6D4' }}>₹{hoveredPoint.val.toLocaleString('en-IN')}</span>
                     </div>
                 )}
 
@@ -230,6 +246,18 @@ export default function CropHistory() {
                                     }).join(' L ')} L 1000 320 Z`}
                                     fill="url(#canvasGradientFill)"
                                 />
+
+                                {/* Interactive Dot Highlight on Hovered Point */}
+                                {hoveredPoint && (
+                                    <circle 
+                                        cx={hoveredPoint.xSvg} 
+                                        cy={hoveredPoint.ySvg} 
+                                        r="6" 
+                                        fill="#06B6D4" 
+                                        stroke="#FFFFFF" 
+                                        strokeWidth="2" 
+                                    />
+                                )}
                             </>
                         )}
                     </svg>

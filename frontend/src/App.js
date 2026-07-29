@@ -10,20 +10,20 @@ export default function App() {
   const [advisorResult, setAdvisorResult] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // 🌟 NEW: MARKETPLACE & ADVANCED TOOLS STATES
+  // MARKETPLACE & ADVANCED TOOLS STATES
   const [fertilizers, setFertilizers] = useState([]);
   const [checkoutMode, setCheckoutMode] = useState(null); // null | 'details' | 'confirm'
   const [orderConfirm, setOrderConfirm] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', phno: '', quantity: 1 });
   
-  // 🌟 RESTRUCTURED PRICE HISTORY STATES MATRIX
+  // PRICE HISTORY STATES MATRIX
   const [forecastCrop, setForecastCrop] = useState('Maize');
   const [forecastData, setForecastData] = useState([]);
   const [historyScope, setHistoryScope] = useState('1Y'); // Managed ranges: '1M' | '6M' | '1Y' | '5Y'
   const [historyMeta, setHistoryPayloadMeta] = useState({ lowest: 0, average: 0, highest: 0, source: 'Initializing...', timestamp: '...' });
   const [isGraphLoading, setIsGraphLoading] = useState(false);
-  const [hoveredPoint, setHoveredPoint] = useState(null); // 🌟 UPDATION: Hover tracker
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   
   // Auth contexts
   const [user, setUser] = useState(null); 
@@ -42,100 +42,97 @@ export default function App() {
   // Timer ref holder for debouncing network calls
   const searchDebounceRef = useRef(null);
 
-  // 🌟 NEW UPDATION: Secure Token Injection Core Utility
-const getSecurityHeaders = (contentType = 'application/json') => {
-  const token = localStorage.getItem('irsa_session_token');
-  const headers = {};
-  if (contentType) headers['Content-Type'] = contentType;
-  if (token) headers['Authorization'] = `Bearer ${token}`; // 👈 Added Bearer prefix
-  return headers;
-};
-
-useEffect(() => {
-  const activeProfile = localStorage.getItem('irsa_user_profile');
-  let currentUser = null;
-
-  if (activeProfile) {
-    try {
-      currentUser = JSON.parse(activeProfile);
-      setUser(currentUser);
-    } catch (err) {
-      localStorage.clear();
-    }
-  }
-
-  fetchMarketPrices();
-  fetchListings(currentUser);
-
-  // Explicit block body (returns undefined)
-  const loadMarketplace = async () => {
-    try {
-      const res = await axios.get('/api/marketplace');
-      setFertilizers(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+  const getSecurityHeaders = (contentType = 'application/json') => {
+    const token = localStorage.getItem('irsa_session_token');
+    const headers = {};
+    if (contentType) headers['Content-Type'] = contentType;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
   };
-  loadMarketplace();
-}, []);
 
-useEffect(() => {
-  if (user && user.role === 'admin') {
-    fetchAdminUsers();
-  }
-}, [user]);
+  useEffect(() => {
+    const activeProfile = localStorage.getItem('irsa_user_profile');
+    let currentUser = null;
 
-  // 🌟 NATIVE GOOGLE POPUP RENDERING EFFECT
-useEffect(() => {
-  /* global google */
-  if (window.google && activeTab === 'Auth Portal') {
-    const wrapper = document.getElementById("google-button-wrapper");
-    if (wrapper) wrapper.innerHTML = ""; // 👈 Check element exists before mutating
-
-    google.accounts.id.initialize({
-      client_id: "648741837176-4hlphht3dkrmccqk6p0180l7jmth9akr.apps.googleusercontent.com",
-      callback: async (response) => {
-        const roleElem = document.getElementById('google-role-select');
-        const selectedRole = roleElem ? roleElem.value : 'farmer';
-        
-        try {
-          const res = await fetch('https://agri-intelligent-sales.onrender.com/api/auth/google-verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credential: response.credential, role: selectedRole })
-          });
-
-          const data = await res.json();
-          if (data.success) {
-            alert(`Google authentication verified as ${selectedRole.toUpperCase()}!`);
-            localStorage.setItem('irsa_session_token', data.token);
-            localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
-            setUser(data.user);
-            setActiveTab('Home');
-          } else {
-            alert(`Authentication failed: ${data.message}`);
-          }
-        } catch (err) {
-          alert("Pipeline offline or connectivity error during backend verification.");
-        }
+    if (activeProfile) {
+      try {
+        currentUser = JSON.parse(activeProfile);
+        setUser(currentUser);
+      } catch (err) {
+        localStorage.clear();
       }
-    });
-
-    if (wrapper) {
-      google.accounts.id.renderButton(
-        wrapper,
-        { theme: "filled_black", size: "large", shape: "rectangular", width: "100%" }
-      );
     }
-  }
-}, [activeTab]);
+
+    fetchMarketPrices();
+    fetchListings(currentUser);
+
+    const loadMarketplace = async () => {
+      try {
+        const res = await axios.get('/api/marketplace');
+        setFertilizers(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadMarketplace();
+  }, []);
+
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      fetchAdminUsers();
+    }
+  }, [user]);
+
+  // NATIVE GOOGLE POPUP RENDERING EFFECT
+  useEffect(() => {
+    /* global google */
+    if (window.google && activeTab === 'Auth Portal') {
+      const wrapper = document.getElementById("google-button-wrapper");
+      if (wrapper) wrapper.innerHTML = "";
+
+      google.accounts.id.initialize({
+        client_id: "648741837176-4hlphht3dkrmccqk6p0180l7jmth9akr.apps.googleusercontent.com",
+        callback: async (response) => {
+          const roleElem = document.getElementById('google-role-select');
+          const selectedRole = roleElem ? roleElem.value : 'farmer';
+          
+          try {
+            const res = await fetch('https://agri-intelligent-sales.onrender.com/api/auth/google-verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential: response.credential, role: selectedRole })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              alert(`Google authentication verified as ${selectedRole.toUpperCase()}!`);
+              localStorage.setItem('irsa_session_token', data.token);
+              localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
+              setUser(data.user);
+              setActiveTab('Home');
+            } else {
+              alert(`Authentication failed: ${data.message}`);
+            }
+          } catch (err) {
+            alert("Pipeline offline or connectivity error during backend verification.");
+          }
+        }
+      });
+
+      if (wrapper) {
+        google.accounts.id.renderButton(
+          wrapper,
+          { theme: "filled_black", size: "large", shape: "rectangular", width: "100%" }
+        );
+      }
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (user && user.role === 'admin') fetchAdminUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Hook into timeline configurations to refresh graph coordinates upon state mutations
   useEffect(() => {
     if (activeTab === 'Price History') {
       generatePriceHistoryCurve(forecastCrop, historyScope);
@@ -151,14 +148,14 @@ useEffect(() => {
     } catch (e) { console.error(e); }
   };
 
-const handleLiveSearchTrigger = (e) => {
+  const handleLiveSearchTrigger = (e) => {
     const queryText = e.target.value;
     setFilterCrop(queryText);
 
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
 
     if (queryText.trim().length > 1) {
-      setIsSearching(true); // 🌟 Start "Fetching..." indicator
+      setIsSearching(true);
     } else {
       setIsSearching(false);
     }
@@ -186,7 +183,7 @@ const handleLiveSearchTrigger = (e) => {
         } catch (err) { 
           console.log("Bypassed search processing"); 
         } finally {
-          setIsSearching(false); // 🌟 Turn off "Fetching..." indicator
+          setIsSearching(false);
         }
       } else {
         setIsSearching(false);
@@ -194,22 +191,22 @@ const handleLiveSearchTrigger = (e) => {
     }, 300);
   };
 
-const fetchListings = async () => {
-  try {
-    const response = await axios.get('/api/listings', {
-      headers: getSecurityHeaders()
-    });
-    setListings(Array.isArray(response.data) ? response.data : []);
-  } catch (error) {
-    console.error("Failed to fetch listings:", error);
-    setListings([]); // Safe fallback to prevent .map crash
-  }
-};
+  const fetchListings = async () => {
+    try {
+      const response = await axios.get('/api/listings', {
+        headers: getSecurityHeaders()
+      });
+      setListings(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error("Failed to fetch listings:", error);
+      setListings([]);
+    }
+  };
 
   const fetchAdminUsers = async () => {
     try {
       const res = await fetch('/api/admin/users', {
-        headers: getSecurityHeaders() // 🌟 NEW UPDATION: Attached authorized token layout properties
+        headers: getSecurityHeaders()
       });
       if (res.ok) {
         setAdminUsers(await res.json());
@@ -219,7 +216,6 @@ const fetchListings = async () => {
     } catch (e) { setAdminUsers([]); }
   };
 
-  // 🌟 RE-ENGINEERED TELEMETRY CONTROLLER PIPELINE (1M | 6M | 1Y | 5Y ADAPTIVE)
   const generatePriceHistoryCurve = async (targetCropName = forecastCrop, selectedRange = historyScope) => {
     try {
       setIsGraphLoading(true);
@@ -231,7 +227,6 @@ const fetchListings = async () => {
       });
       const data = await res.json();
       if (data.success) {
-        // 🌟 UPDATED FIX: Maps directly to the incoming telemetry dataset array matching your endpoint keys
         setForecastData(data.historicalPointsArray || []);
         setHistoryPayloadMeta({
           lowest: data.lowest || 0,
@@ -245,7 +240,6 @@ const fetchListings = async () => {
     finally { setIsGraphLoading(false); }
   };
 
-  // Helper macro generating timeline intervals mapping down across structural ranges
   const getTimelineLabelsXAxis = () => {
     const pointsCount = forecastData.length;
     const labels = [];
@@ -277,8 +271,6 @@ const fetchListings = async () => {
           setIsSignUp(false);
         } else {
           alert("Login successful! Identity verified.");
-          
-          // 🌟 NEW UPDATION: Secure cookie-alternative persistence layer setup
           if (data.token) localStorage.setItem('irsa_session_token', data.token);
           localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
 
@@ -311,7 +303,7 @@ const fetchListings = async () => {
     try {
       const res = await fetch('/api/listings', {
         method: 'POST',
-        headers: getSecurityHeaders('application/json'), // 🌟 NEW UPDATION: Transmit token payload properties cleanly
+        headers: getSecurityHeaders('application/json'),
         body: JSON.stringify({ ...farmerForm, farmerId: user.id, farmerName: user.name })
       });
       if (res.ok) {
@@ -325,64 +317,60 @@ const fetchListings = async () => {
     } catch (err) { console.error(err); }
   };
 
-const deleteListing = async (id) => {
+  const deleteListing = async (id) => {
     if (!window.confirm("Confirm listing removal from cloud nodes?")) return;
     
-    // Get user from storage to verify identity
     const user = JSON.parse(localStorage.getItem('irsa_user_profile') || '{}');
 
     try {
-        const res = await fetch(`/api/listings/${id}`, { 
-            method: 'DELETE',
-            // Pass the user so your backend knows if it's the owner or admin
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-user-role': user.role,
-                'x-user-id': user.id 
-            }
-        });
-
-        if (res.ok) { 
-            fetchListings(); // Refresh the list
-            if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
-        } else {
-            const errPayload = await res.json();
-            alert(`Action Restricted: ${errPayload.message}`);
+      const res = await fetch(`/api/listings/${id}`, { 
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-role': user.role,
+          'x-user-id': user.id 
         }
+      });
+
+      if (res.ok) { 
+        fetchListings();
+        if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
+      } else {
+        const errPayload = await res.json();
+        alert(`Action Restricted: ${errPayload.message}`);
+      }
     } catch (e) {
-        console.error("Delete Error:", e);
+      console.error("Delete Error:", e);
     }
-};
+  };
 
   const deleteUser = async (id) => {
     if (!window.confirm("Purge account index structure permanently?")) return;
     try {
       const res = await fetch(`/api/admin/users/${id}`, { 
         method: 'DELETE',
-        headers: getSecurityHeaders(null) // 🌟 NEW UPDATION: Secure admin runtime execution clearance
+        headers: getSecurityHeaders(null)
       });
       if (res.ok) fetchAdminUsers();
     } catch (e) {}
   };
 
-  // 🌟 NEW UPDATION: Complete Session State Termination Handler
   const handleLogoutEvent = () => {
     localStorage.clear();
     setUser(null);
     setActiveTab('Home');
   };
 
-// 🌟 MARKETPLACE PURCHASE HANDLER
   const processPurchase = async (prod) => {
     if (!checkoutData.address || !checkoutData.name || !checkoutData.phno) {
       return alert("Fill all details!");
     }
     
     try {
-      setIsGraphLoading(true); // Shows a loader while the backend processes the order
+      setIsGraphLoading(true);
       const res = await axios.post('https://agri-intelligent-sales.onrender.com/api/checkout', { productId: prod.id, ...checkoutData });
       setOrderConfirm(res.data);
-      setCheckoutMode('confirm'); // Switches the modal slab to the order confirmation view
+      setCheckoutMode('confirm');
     } catch (err) {
       alert("Checkout processing error from backend.");
     } finally {
@@ -411,140 +399,138 @@ const deleteListing = async (id) => {
             <Sparkles size={14} className="sparkle-icon" style={{ color: '#34d399', marginLeft: '-4px' }} />
           </div>
 
-<div className="nav-tabs-wrapper">
-  {/* Always visible */}
-  <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
-  <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
-  <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
+          <div className="nav-tabs-wrapper">
+            <button onClick={() => setActiveTab('Home')} className={`tab-btn ${activeTab === 'Home' ? 'active-tab' : ''}`}><Home size={15}/> <span>Home</span></button>
+            <button onClick={() => setActiveTab('Market Prices')} className={`tab-btn ${activeTab === 'Market Prices' ? 'active-tab' : ''}`}><LayoutGrid size={15}/> <span>Market Prices</span></button>
+            <button onClick={() => setActiveTab('Price History')} className={`tab-btn ${activeTab === 'Price History' ? 'active-tab' : ''}`}><LineChart size={15}/> <span>Price History</span></button>
 
-  {user && (user.role === 'farmer' || user.role === 'merchant' || user.role === 'admin') && (
-        <button 
-            className={`tab-btn ${activeTab === 'Listings' ? 'active-tab' : ''}`} 
-            onClick={() => setActiveTab('Listings')}
-        >
-            Crop Listings
-        </button>
-    )}
-      
-{(!user || user.role === 'farmer' || user.role === 'merchant') && (
-  <button 
-      onClick={() => setActiveTab('Help')} 
-      className={`tab-btn ${activeTab === 'Help' ? 'active-tab' : ''}`}
-  >
-      <HelpCircle size={15}/> <span>Help</span>
-  </button>
-)}
+            {user && (user.role === 'farmer' || user.role === 'merchant' || user.role === 'admin') && (
+              <button 
+                className={`tab-btn ${activeTab === 'Listings' ? 'active-tab' : ''}`} 
+                onClick={() => setActiveTab('Listings')}
+              >
+                Crop Listings
+              </button>
+            )}
+                
+            {(!user || user.role === 'farmer' || user.role === 'merchant') && (
+              <button 
+                onClick={() => setActiveTab('Help')} 
+                className={`tab-btn ${activeTab === 'Help' ? 'active-tab' : ''}`}
+              >
+                <HelpCircle size={15}/> <span>Help</span>
+              </button>
+            )}
 
-  {/* ONLY FARMER ACCESS: Marketplace and Pro Tools */}
-  {user && user.role === 'farmer' && (
-    <>
-      <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>
-      <button onClick={() => setActiveTab('Agro-Climate Risk')} className={`tab-btn ${activeTab === 'Agro-Climate Risk' ? 'active-tab' : ''}`}> <span>⛅ Climate Risk Matrix</span></button>
-      <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>
-    </>
-  )}
+            {user && user.role === 'farmer' && (
+              <>
+                <button onClick={() => setActiveTab('Marketplace')} className={`tab-btn ${activeTab === 'Marketplace' ? 'active-tab' : ''}`}><ShoppingBag size={15}/> <span>Marketplace</span></button>
+                <button onClick={() => setActiveTab('Agro-Climate Risk')} className={`tab-btn ${activeTab === 'Agro-Climate Risk' ? 'active-tab' : ''}`}> <span>⛅ Climate Risk Matrix</span></button>
+                <button onClick={() => setActiveTab('Farmer Portal')} className={`tab-btn ${activeTab === 'Farmer Portal' ? 'active-tab' : ''}`}><PlusCircle size={15}/> <span>Farmer Workspace</span></button>
+              </>
+            )}
 
-  {/* ADMIN ACCESS */}
-  {user && user.role === 'admin' && (
-    <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>
-  )}
+            {user && user.role === 'admin' && (
+              <button onClick={() => setActiveTab('Admin Portal')} className={`tab-btn ${activeTab === 'Admin Portal' ? 'active-tab' : ''}`}><UserCheck size={15}/> <span>Admin Control</span></button>
+            )}
 
-  {/* Auth Controls */}
-  {!user ? (
-    <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
-  ) : (
-    <button onClick={handleLogoutEvent} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
-  )}
-</div>
+            {!user ? (
+              <button onClick={() => setActiveTab('Auth Portal')} className="tab-btn active-tab"><LogIn size={14}/> <span>Portal Access</span></button>
+            ) : (
+              <button onClick={handleLogoutEvent} className="tab-btn" style={{color:'#f87171'}}><LogOut size={14}/> <span>Exit ({user.name})</span></button>
+            )}
+          </div>
         </div>
       </nav>
 
       <main className="app-main-content">
         
-        {/* --- 🛒 MARKETPLACE SECTION --- */}
+        {/* MARKETPLACE SECTION */}
         {activeTab === 'Marketplace' && (
-           <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
-             {checkoutMode === 'confirm' ? (
-               <div style={{ textAlign: 'center', color: '#fff' }}>
-                  <h1>Order Confirmed!</h1>
-                  <p>Order ID: {orderConfirm.orderId}</p>
-                  <p>Arriving: {orderConfirm.deliveryDate}</p>
-                  <button onClick={() => setCheckoutMode(null)} className="primary-action-btn">Back to Shop</button>
-               </div>
-             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                  {fertilizers.map(f => (
-                    <div key={f.id} className="glass-slab" style={{ padding: '25px' }}>
-                      <h3 style={{ color: '#fff' }}>{f.name}</h3>
-                      <p style={{ color: '#ddd' }}>{f.desc}</p>
-                      <h2 style={{ color: '#38bdf8' }}>₹{f.price}</h2>
-                      <button onClick={() => setSelectedProduct(f)} className="form-submit-btn">Buy Now</button>
-                    </div>
-                  ))}
-                </div>
-             )}
-           </div>
+          <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
+            {checkoutMode === 'confirm' ? (
+              <div style={{ textAlign: 'center', color: '#fff' }}>
+                <h1>Order Confirmed!</h1>
+                <p>Order ID: {orderConfirm.orderId}</p>
+                <p>Arriving: {orderConfirm.deliveryDate}</p>
+                <button onClick={() => setCheckoutMode(null)} className="primary-action-btn">Back to Shop</button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                {fertilizers.map(f => (
+                  <div key={f.id} className="glass-slab" style={{ padding: '25px' }}>
+                    <h3 style={{ color: '#fff' }}>{f.name}</h3>
+                    <p style={{ color: '#ddd' }}>{f.desc}</p>
+                    <h2 style={{ color: '#38bdf8' }}>₹{f.price}</h2>
+                    <button onClick={() => setSelectedProduct(f)} className="form-submit-btn">Buy Now</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
-{activeTab === 'Agro-Climate Risk' && (
-  <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
-    <h2 className="section-title text-center" style={{ color: '#fff', marginBottom: '10px' }}>Agro-Climate Risk Matrix</h2>
-    <p className="section-subtitle text-center" style={{ color: '#94a3b8', marginBottom: '30px' }}>Real-time telemetric 72-hour spoilage and stress assessment for your district cargo.</p>
-    
-    <div className="filter-group mb-8" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '30px' }}>
-      <input 
-        type="text" 
-        id="risk-location" 
-        className="glass-input" 
-        placeholder="Enter District/City (e.g. Tadepalligudem)..." 
-        style={{ width: '65%', background: '#0f172a', color: '#fff' }}
-      />
-      <button 
-        onClick={async () => {
-          const loc = document.getElementById('risk-location').value;
-          if (!loc.trim()) return alert("Please enter a valid district or geographic city hub name.");
-          
-          try {
-            setIsGraphLoading(true);
-            // Calls your Render backend endpoint
-            const res = await axios.post('https://agri-intelligent-sales.onrender.com/api/climate/risk-matrix', { location: loc });
-            setAdvisorResult(res.data); // Stores the returning metric payloads safely
-          } catch (e) {
-            alert("Hyper-local telemetry lookup failure. Check server or API key.");
-          } finally {
-            setIsGraphLoading(false);
-          }
-        }} 
-        className="primary-action-btn"
-        style={{ padding: '0 20px', background: '#06b6d4', border: 'none', color: '#0f172a' }}
-      >
-        {isGraphLoading ? 'Scanning...' : 'Analyze Risk'}
-      </button>
-    </div>
 
-    {/* Dynamic Traffic Light Matrix Cards */}
-    {advisorResult && (
-      <div className="risk-grid animated-entrance" style={{ display: 'grid', gap: '20px' }}>
-        <div className={`risk-card ${advisorResult.riskLevel?.toLowerCase() || 'stable'}`} style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div className="risk-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>Telemetry Survey for {advisorResult.location || 'Selected Coordinates'}</h3>
-            <span className="risk-badge" style={{ padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '12px', background: 'rgba(0,0,0,0.3)', color: '#fff', letterSpacing: '0.5px' }}>
-              {advisorResult.riskLevel} (Score: {advisorResult.score}/100)
-            </span>
+        {/* AGRO-CLIMATE RISK */}
+        {activeTab === 'Agro-Climate Risk' && (
+          <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
+            <h2 className="section-title text-center" style={{ color: '#fff', marginBottom: '10px' }}>Agro-Climate Risk Matrix</h2>
+            <p className="section-subtitle text-center" style={{ color: '#94a3b8', marginBottom: '30px' }}>Real-time telemetric 72-hour spoilage and stress assessment for your district cargo.</p>
+            
+            <div className="filter-group mb-8" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '30px' }}>
+              <input 
+                type="text" 
+                id="risk-location" 
+                className="glass-input" 
+                placeholder="Enter District/City (e.g. Tadepalligudem)..." 
+                style={{ width: '65%', background: '#0f172a', color: '#fff' }}
+              />
+              <button 
+                onClick={async () => {
+                  const loc = document.getElementById('risk-location').value;
+                  if (!loc.trim()) return alert("Please enter a valid district or geographic city hub name.");
+                  
+                  try {
+                    setIsGraphLoading(true);
+                    const res = await axios.post('https://agri-intelligent-sales.onrender.com/api/climate/risk-matrix', { location: loc });
+                    setAdvisorResult(res.data);
+                  } catch (e) {
+                    alert("Hyper-local telemetry lookup failure. Check server or API key.");
+                  } finally {
+                    setIsGraphLoading(false);
+                  }
+                }} 
+                className="primary-action-btn"
+                style={{ padding: '0 20px', background: '#06b6d4', border: 'none', color: '#0f172a' }}
+              >
+                {isGraphLoading ? 'Scanning...' : 'Analyze Risk'}
+              </button>
+            </div>
+
+            {advisorResult && (
+              <div className="risk-grid animated-entrance" style={{ display: 'grid', gap: '20px' }}>
+                <div className={`risk-card ${advisorResult.riskLevel?.toLowerCase() || 'stable'}`} style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="risk-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>Telemetry Survey for {advisorResult.location || 'Selected Coordinates'}</h3>
+                    <span className="risk-badge" style={{ padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '12px', background: 'rgba(0,0,0,0.3)', color: '#fff', letterSpacing: '0.5px' }}>
+                      {advisorResult.riskLevel} (Score: {advisorResult.score}/100)
+                    </span>
+                  </div>
+                  
+                  <div className="stats-row" style={{ display: 'flex', gap: '30px', margin: '20px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
+                    <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Micro-climate Temperature</small><p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>{advisorResult.temp}°C</p></div>
+                    <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Ambient Air Humidity</small><p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>{advisorResult.humidity}%</p></div>
+                  </div>
+                  
+                  <p className="risk-advice" style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.5', marginTop: '15px', fontWeight: 600 }}>
+                    💼 Recommendation Protocol: {advisorResult.recommendation}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-          
-          <div className="stats-row" style={{ display: 'flex', gap: '30px', margin: '20px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
-            <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Micro-climate Temperature</small><p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>{advisorResult.temp}°C</p></div>
-            <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Ambient Air Humidity</small><p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>{advisorResult.humidity}%</p></div>
-          </div>
-          
-          <p className="risk-advice" style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.5', marginTop: '15px', fontWeight: 600 }}>
-            💼 Recommendation Protocol: {advisorResult.recommendation}
-          </p>
-        </div>
-      </div>
-    )}
-  </div>
-)}
+        )}
+
+        {/* HOME SECTION */}
         {activeTab === 'Home' && (
           <div className="glass-slab animated-entrance">
             <h1 className="hero-heading">IRSA — Intelligent <br/><span className="gradient-text">Resource Ecosystem</span></h1>
@@ -556,7 +542,8 @@ const deleteListing = async (id) => {
           </div>
         )}
 
-      {activeTab === 'Market Prices' && (
+        {/* MARKET PRICES SECTION */}
+        {activeTab === 'Market Prices' && (
           <div className="glass-slab animated-entrance">
             <div className="section-header-row">
               <div>
@@ -576,7 +563,6 @@ const deleteListing = async (id) => {
               </div>
             </div>
 
-            {/* 🌟 AI-STYLE LIVE SCANNING / THINKING STATUS BADGE */}
             {isSearching && (
               <div className="animated-entrance" style={{
                 display: 'flex',
@@ -644,7 +630,6 @@ const deleteListing = async (id) => {
                 </tbody>
               </table>
 
-              {/* EMPTY SEARCH RESULT FALLBACK NOTICE */}
               {!isSearching && marketPrices.filter(item => item.crop.toLowerCase().includes(filterCrop.toLowerCase().trim())).length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
                   <p style={{ fontSize: '15px', fontWeight: '500' }}>
@@ -658,83 +643,82 @@ const deleteListing = async (id) => {
           </div>
         )}
 
-        {/* --- 🌾 CROP LISTINGS SECTION --- */}
-{activeTab === 'Listings' && (
-  <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
-    <h2 className="section-title">Regional Crop Market Listings</h2>
-    <div className="listings-grid">
-      {listings.length > 0 ? (
-        listings.map((item) => (
-          <div key={item._id} className="listing-card">
-            <div onClick={() => setSelectedListing(item)} style={{cursor: 'pointer'}}>
-              <h3>{item.cropName}</h3>
-              <p><strong>Quantity:</strong> {item.quantity} Quintals</p>
-              <p><strong>Farmer:</strong> {item.farmerName}</p>
-              <small>Posted: {item.date}</small>
+        {/* CROP LISTINGS SECTION */}
+        {activeTab === 'Listings' && (
+          <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
+            <h2 className="section-title">Regional Crop Market Listings</h2>
+            <div className="listings-grid">
+              {listings.length > 0 ? (
+                listings.map((item) => (
+                  <div key={item._id} className="listing-card">
+                    <div onClick={() => setSelectedListing(item)} style={{cursor: 'pointer'}}>
+                      <h3>{item.cropName}</h3>
+                      <p><strong>Quantity:</strong> {item.quantity} Quintals</p>
+                      <p><strong>Farmer:</strong> {item.farmerName}</p>
+                      <small>Posted: {item.date}</small>
+                    </div>
+
+                    {(user.role === 'admin' || user.id === item.farmerId) && (
+                      <button 
+                        onClick={() => deleteListing(item._id)} 
+                        className="delete-btn"
+                        style={{
+                          marginTop: '15px', 
+                          background: '#ef4444', 
+                          border: 'none', 
+                          padding: '8px', 
+                          borderRadius: '6px', 
+                          color: 'white', 
+                          cursor: 'pointer',
+                          width: '100%'
+                        }}
+                      >
+                        Delete / Mark as Sold
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p>No crop listings available at the moment.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* HELP SECTION */}
+        {activeTab === 'Help' && (
+          <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
+            <h2 className="section-title">Help & Support</h2>
+            <p style={{ color: '#cbd5e1', marginBottom: '20px' }}>Need assistance with IRSA? Reach out to us through the channels below:</p>
+            
+            <div className="vertical-list">
+              <a href="tel:+919392646933" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
+                <div><strong>📱 Mobile:</strong> <b>+91 9392646933</b></div>
+              </a>
+
+              <a href="mailto:sandeep@sasi.ac.in" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
+                <div><strong>📧 Email:</strong> <b>sandeep@sasi.ac.in</b></div>
+              </a>
+
+              <div className="list-item-card">
+                <div><strong>📍 Location:</strong> Tadepalligudem, Andhra Pradesh</div>
+              </div>
             </div>
 
-            {/* DELETE BUTTON: Only show if User is Admin OR the Farmer who posted it */}
-            {(user.role === 'admin' || user.id === item.farmerId) && (
-              <button 
-                onClick={() => deleteListing(item._id)} 
-                className="delete-btn"
-                style={{
-                  marginTop: '15px', 
-                  background: '#ef4444', 
-                  border: 'none', 
-                  padding: '8px', 
-                  borderRadius: '6px', 
-                  color: 'white', 
-                  cursor: 'pointer',
-                  width: '100%'
-                }}
-              >
-                Delete / Mark as Sold
-              </button>
+            {user && (
+              <>
+                <h3 className="section-title" style={{ marginTop: '30px' }}>Quick Resources</h3>
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  <button className="secondary-action-btn" onClick={() => setActiveTab('Auth Portal')}>
+                    Reset Account Credentials
+                  </button>
+                </div>
+              </>
             )}
           </div>
-        ))
-      ) : (
-        <p>No crop listings available at the moment.</p>
-      )}
-    </div>
-  </div>
-)}
+        )}
 
-{activeTab === 'Help' && (
-  <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
-    <h2 className="section-title">Help & Support</h2>
-    <p style={{ color: '#cbd5e1', marginBottom: '20px' }}>Need assistance with IRSA? Reach out to us through the channels below:</p>
-    
-    <div className="vertical-list">
-      <a href="tel:+919392646933" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
-        <div><strong>📱 Mobile:</strong> <b>+91 9392646933</b></div>
-      </a>
-
-      <a href="mailto:sandeep@sasi.ac.in" className="list-item-card" style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}>
-        <div><strong>📧 Email:</strong> <b>sandeep@sasi.ac.in</b></div>
-      </a>
-
-      <div className="list-item-card">
-        <div><strong>📍 Location:</strong> Tadepalligudem, Andhra Pradesh</div>
-      </div>
-    </div>
-
-    {/* Only show "Quick Resources" if the user is logged in (Farmer/Merchant) */}
-    {user && (
-      <>
-        <h3 className="section-title" style={{ marginTop: '30px' }}>Quick Resources</h3>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <button className="secondary-action-btn" onClick={() => setActiveTab('Auth Portal')}>
-            Reset Account Credentials
-          </button>
-        </div>
-      </>
-    )}
-  </div>
-)}
-
-        {/* --- PRICE HISTORY WITH INTERACTIVE HOVER TOOLTIP --- */}
+        {/* PRICE HISTORY SECTION */}
         {activeTab === 'Price History' && (
           <div className="glass-slab animated-entrance" style={{ position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -752,7 +736,6 @@ const deleteListing = async (id) => {
                 </div>
               </div>
 
-              {/* Real-time Query Input Selection Field */}
               <div className="filter-group">
                 <input 
                   type="text" className="glass-input" style={{ width: '240px' }} 
@@ -763,220 +746,214 @@ const deleteListing = async (id) => {
               </div>
             </div>
 
-            {/* High-Density Real Metric Headers Line Marquee */}
             <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: '12px 24px', borderRadius: '6px 6px 0 0', fontSize: '13px', borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#94a3b8' }}>
               <div>Lowest: <span style={{ color: '#ef4444', fontWeight: 'bold' }}>₹{historyMeta.lowest.toLocaleString('en-IN')}</span></div>
               <div>Average: <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>₹{historyMeta.average.toLocaleString('en-IN')}</span></div>
               <div>Highest: <span style={{ color: '#10b981', fontWeight: 'bold' }}>₹{historyMeta.highest.toLocaleString('en-IN')}</span></div>
             </div>
 
-            {/* Main Interactive Chart Grid Display Layer */}
-<div 
-            style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none', position: 'relative' }}
-            onMouseMove={(e) => {
-              if (!forecastData || forecastData.length <= 1) return;
-              const rect = e.currentTarget.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const totalPoints = forecastData.length - 1;
-              const idx = Math.max(0, Math.min(totalPoints, Math.round((x / rect.width) * totalPoints)));
+            <div 
+              style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none', position: 'relative' }}
+              onMouseMove={(e) => {
+                if (!forecastData || forecastData.length <= 1) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const totalPoints = forecastData.length - 1;
+                const idx = Math.max(0, Math.min(totalPoints, Math.round((x / rect.width) * totalPoints)));
 
-              if (forecastData[idx] !== undefined) {
-                setHoveredPoint({ 
-                  x: (idx / totalPoints) * 1000, 
-                  val: forecastData[idx], 
-                  date: axisLabels[idx] || 'Live Spot' 
-                });
-              }
-            }}
-            onMouseLeave={() => setHoveredPoint(null)}
-          >
-            {hoveredPoint && (
-              <div style={{ position: 'absolute', left: `${Math.min(85, Math.max(5, (hoveredPoint.x / 1000) * 90))}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10, pointerEvents: 'none' }}>
-                {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
-              </div>
-            )}
-
-            {isGraphLoading && (
-              <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
-                Re-indexing verified marketplace timeline arrays...
-              </div>
-            )}
-
-            <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
-              <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
-                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
-                  </linearGradient>
-                </defs>
-
-                {/* Horizontal dotted references rules */}
-                <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
-                <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
-                <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
-
-                {forecastData && forecastData.length > 1 && (
-                  <>
-                    <path
-                      d={`M ${forecastData.map((val, idx) => {
-                        const x = (idx / (forecastData.length - 1)) * 1000;
-                        const padFloor = (historyMeta.lowest || 0) * 0.8;
-                        const padCeil = (historyMeta.highest || 100) * 1.2;
-                        const range = (padCeil - padFloor) || 1;
-                        const y = 260 - (((val - padFloor) / range) * 260);
-                        return `${x} ${isNaN(y) ? 130 : y}`;
-                      }).join(' L ')}`}
-                      fill="none"
-                      stroke="#06b6d4"
-                      strokeWidth="3"
-                    />
-                    <path
-                      d={`M 0 260 L ${forecastData.map((val, idx) => {
-                        const x = (idx / (forecastData.length - 1)) * 1000;
-                        const padFloor = (historyMeta.lowest || 0) * 0.8;
-                        const padCeil = (historyMeta.highest || 100) * 1.2;
-                        const range = (padCeil - padFloor) || 1;
-                        const y = 260 - (((val - padFloor) / range) * 260);
-                        return `${x} ${isNaN(y) ? 130 : y}`;
-                      }).join(' L ')} L 1000 260 Z`}
-                      fill="url(#frontAreaGradient)"
-                    />
-                  </>
-                )}
-              </svg> {/* 👈 Added missing closing tag */}
-            </div>
-
-            {/* X-Axis Horizontal String Labels Axis Mapping */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingLeft: '6px' }}>
-              {axisLabels.map((item, index) => (
-                <div key={index} style={{ fontSize: '10px', color: '#475569', transform: 'rotate(-20deg)', whiteSpace: 'nowrap' }}>
-                  {item}
+                if (forecastData[idx] !== undefined) {
+                  setHoveredPoint({ 
+                    x: (idx / totalPoints) * 1000, 
+                    val: forecastData[idx], 
+                    date: axisLabels[idx] || 'Live Spot' 
+                  });
+                }
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
+            >
+              {hoveredPoint && (
+                <div style={{ position: 'absolute', left: `${Math.min(85, Math.max(5, (hoveredPoint.x / 1000) * 90))}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10, pointerEvents: 'none' }}>
+                  {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
                 </div>
-              ))}
-            </div>
+              )}
 
-            {/* Timeline Filter Trigger Blocks Grid */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-              {[
-                { key: '1M', text: '1 Month' },
-                { key: '6M', text: '6 Months' },
-                { key: '1Y', text: '1 Year Full View' },
-                { key: '5Y', text: '5 Years Macro View' }
-              ].map(item => (
-                <button
-                  key={item.key}
-                  onClick={() => setHistoryScope(item.key)}
-                  className="secondary-action-btn"
-                  style={{
-                    backgroundColor: historyScope === item.key ? '#06b6d4' : 'rgba(30,41,59,0.5)',
-                    color: historyScope === item.key ? '#0f172a' : '#cbd5e1',
-                    border: historyScope === item.key ? '1px solid #06b6d4' : '1px solid #334155',
-                    padding: '6px 14px',
-                    fontSize: '12px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {item.text}
-                </button>
-              ))}
-            </div>
+              {isGraphLoading && (
+                <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
+                  Re-indexing verified marketplace timeline arrays...
+                </div>
+              )}
 
-            <div style={{ marginTop: '20px', fontSize: '11px', color: '#475569', fontFamily: 'Consolas, monospace' }}>
-              Data Trace Channel: {historyMeta.source} | Last Update Event Block: {historyMeta.timestamp}
+              <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
+                <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
+                      <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+
+                  <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
+                  <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
+                  <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
+
+                  {forecastData && forecastData.length > 1 && (
+                    <>
+                      <path
+                        d={`M ${forecastData.map((val, idx) => {
+                          const x = (idx / (forecastData.length - 1)) * 1000;
+                          const padFloor = (historyMeta.lowest || 0) * 0.8;
+                          const padCeil = (historyMeta.highest || 100) * 1.2;
+                          const range = (padCeil - padFloor) || 1;
+                          const y = 260 - (((val - padFloor) / range) * 260);
+                          return `${x} ${isNaN(y) ? 130 : y}`;
+                        }).join(' L ')}`}
+                        fill="none"
+                        stroke="#06b6d4"
+                        strokeWidth="3"
+                      />
+                      <path
+                        d={`M 0 260 L ${forecastData.map((val, idx) => {
+                          const x = (idx / (forecastData.length - 1)) * 1000;
+                          const padFloor = (historyMeta.lowest || 0) * 0.8;
+                          const padCeil = (historyMeta.highest || 100) * 1.2;
+                          const range = (padCeil - padFloor) || 1;
+                          const y = 260 - (((val - padFloor) / range) * 260);
+                          return `${x} ${isNaN(y) ? 130 : y}`;
+                        }).join(' L ')} L 1000 260 Z`}
+                        fill="url(#frontAreaGradient)"
+                      />
+                    </>
+                  )}
+                </svg>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingLeft: '6px' }}>
+                {axisLabels.map((item, index) => (
+                  <div key={index} style={{ fontSize: '10px', color: '#475569', transform: 'rotate(-20deg)', whiteSpace: 'nowrap' }}>
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                {[
+                  { key: '1M', text: '1 Month' },
+                  { key: '6M', text: '6 Months' },
+                  { key: '1Y', text: '1 Year Full View' },
+                  { key: '5Y', text: '5 Years Macro View' }
+                ].map(item => (
+                  <button
+                    key={item.key}
+                    onClick={() => setHistoryScope(item.key)}
+                    className="secondary-action-btn"
+                    style={{
+                      backgroundColor: historyScope === item.key ? '#06b6d4' : 'rgba(30,41,59,0.5)',
+                      color: historyScope === item.key ? '#0f172a' : '#cbd5e1',
+                      border: historyScope === item.key ? '1px solid #06b6d4' : '1px solid #334155',
+                      padding: '6px 14px',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {item.text}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '20px', fontSize: '11px', color: '#475569', fontFamily: 'Consolas, monospace' }}>
+                Data Trace Channel: {historyMeta.source} | Last Update Event Block: {historyMeta.timestamp}
+              </div>
             </div>
           </div>
         )}
 
-{activeTab === 'Auth Portal' && (
-  <div className="glass-slab auth-box animated-entrance">
-    <h2 className="section-title text-center mb-6">
-      {isSignUp ? "Create Secure Account" : "Identity Authentication Check"}
-    </h2>
-    
-    <form 
-      onSubmit={async (e) => {
-        e.preventDefault();
-        // 🌟 CONFIRM PASSWORD VALIDATION CHECK
-        if (isSignUp && authForm.password !== authForm.confirmPassword) {
-          return alert("Authorization Refused: Passwords do not match.");
-        }
-        await handleAuthSubmit(e);
-      }} 
-      className="vertical-form"
-    >
-      {isSignUp && (
-        <div className="input-block">
-          <label>Full Identification Name</label>
-          <input type="text" className="glass-input" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})}/>
-        </div>
-      )}
-      <div className="input-block">
-        <label>Email Address</label>
-        <input type="email" className="glass-input" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})}/>
-      </div>
-      <div className="input-block">
-        <label>Password</label>
-        <input type="password" className="glass-input" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})}/>
-      </div>
-      
-      {/* 🌟 CONFIRM PASSWORD COLUMN (Visible only during signup) */}
-      {isSignUp && (
-        <div className="input-block animated-entrance">
-          <label>Confirm Authorized Password</label>
-          <input 
-            type="password" 
-            className="glass-input" 
-            required 
-            value={authForm.confirmPassword || ''} 
-            onChange={e => setAuthForm({...authForm, confirmPassword: e.target.value})}
-          />
-        </div>
-      )}
+        {/* AUTH PORTAL SECTION */}
+        {activeTab === 'Auth Portal' && (
+          <div className="glass-slab auth-box animated-entrance">
+            <h2 className="section-title text-center mb-6">
+              {isSignUp ? "Create Secure Account" : "Identity Authentication Check"}
+            </h2>
+            
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (isSignUp && authForm.password !== authForm.confirmPassword) {
+                  return alert("Authorization Refused: Passwords do not match.");
+                }
+                await handleAuthSubmit(e);
+              }} 
+              className="vertical-form"
+            >
+              {isSignUp && (
+                <div className="input-block">
+                  <label>Full Identification Name</label>
+                  <input type="text" className="glass-input" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})}/>
+                </div>
+              )}
+              <div className="input-block">
+                <label>Email Address</label>
+                <input type="email" className="glass-input" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})}/>
+              </div>
+              <div className="input-block">
+                <label>Password</label>
+                <input type="password" className="glass-input" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})}/>
+              </div>
+              
+              {isSignUp && (
+                <div className="input-block animated-entrance">
+                  <label>Confirm Authorized Password</label>
+                  <input 
+                    type="password" 
+                    className="glass-input" 
+                    required 
+                    value={authForm.confirmPassword || ''} 
+                    onChange={e => setAuthForm({...authForm, confirmPassword: e.target.value})}
+                  />
+                </div>
+              )}
 
-      <div className="input-block">
-        <label>Authorized System Role</label>
-        <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{background:'#0f172a'}}>
-          <option value="farmer">Farmer (Producer Hub)</option>
-          <option value="merchant">Merchant / Wholesaler</option>
-          {!isSignUp && <option value="admin">Administrator</option>}
-        </select>
-      </div>
-      {authError && <p style={{color:'#f87171', fontSize:'12px', fontWeight:600}}>{authError}</p>}
-      <button type="submit" className="form-submit-btn">
-        {isSignUp ? "Register Master Account" : "Verify Credentials Access"}
-      </button>
-    </form>
+              <div className="input-block">
+                <label>Authorized System Role</label>
+                <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{background:'#0f172a'}}>
+                  <option value="farmer">Farmer (Producer Hub)</option>
+                  <option value="merchant">Merchant / Wholesaler</option>
+                  {!isSignUp && <option value="admin">Administrator</option>}
+                </select>
+              </div>
+              {authError && <p style={{color:'#f87171', fontSize:'12px', fontWeight:600}}>{authError}</p>}
+              <button type="submit" className="form-submit-btn">
+                {isSignUp ? "Register Master Account" : "Verify Credentials Access"}
+              </button>
+            </form>
 
-    {/* Separator */}
-    <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0', color: '#64748b', fontSize: '13px' }}>
-      <hr style={{ flex: 1, border: '0', borderTop: '1px solid #334155' }} />
-      <span style={{ padding: '0 10px' }}>OR</span>
-      <hr style={{ flex: 1, border: '0', borderTop: '1px solid #334155' }} />
-    </div>
+            <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0', color: '#64748b', fontSize: '13px' }}>
+              <hr style={{ flex: 1, border: '0', borderTop: '1px solid #334155' }} />
+              <span style={{ padding: '0 10px' }}>OR</span>
+              <hr style={{ flex: 1, border: '0', borderTop: '1px solid #334155' }} />
+            </div>
 
-    {/* Role Selection required for native Google OAuth */}
-    <div className="input-block" style={{ marginBottom: '20px' }}>
-      <label style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '6px', display: 'block' }}>Select Role Before Google Sign-In</label>
-      <select 
-        id="google-role-select"
-        className="glass-input" 
-        style={{ background: '#0f172a', color: '#fff', width: '100%' }}
-      >
-        <option value="farmer">Farmer (Producer Hub)</option>
-        <option value="merchant">Merchant / Wholesaler</option>
-      </select>
-    </div>
+            <div className="input-block" style={{ marginBottom: '20px' }}>
+              <label style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '6px', display: 'block' }}>Select Role Before Google Sign-In</label>
+              <select 
+                id="google-role-select"
+                className="glass-input" 
+                style={{ background: '#0f172a', color: '#fff', width: '100%' }}
+              >
+                <option value="farmer">Farmer (Producer Hub)</option>
+                <option value="merchant">Merchant / Wholesaler</option>
+              </select>
+            </div>
 
-    {/* 🌟 OFFICIAL NATIVE GOOGLE POPUP CONTAINER MOUNT */}
-    <div id="google-button-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '10px' }}></div>
+            <div id="google-button-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '10px' }}></div>
 
-    <p className="auth-toggle-text" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }} style={{ marginTop: '20px' }}>
-      {isSignUp ? "Already hold active clearance? " : "Require new profile registration? "} 
-      <span>{isSignUp ? "Login Here" : "Sign Up Here"}</span>
-    </p>
-  </div>
-)}
+            <p className="auth-toggle-text" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }} style={{ marginTop: '20px' }}>
+              {isSignUp ? "Already hold active clearance? " : "Require new profile registration? "} 
+              <span>{isSignUp ? "Login Here" : "Sign Up Here"}</span>
+            </p>
+          </div>
+        )}
+
+        {/* FARMER PORTAL */}
         {activeTab === 'Farmer Portal' && user && (
           <div className="split-grid animated-entrance">
             <div className="glass-slab">
@@ -1007,6 +984,7 @@ const deleteListing = async (id) => {
           </div>
         )}
 
+        {/* MERCHANT PORTAL */}
         {activeTab === 'Merchant Portal' && user && (
           <div className="glass-slab animated-entrance">
             <h2 className="section-title mb-2">Available Regional Batches</h2>
@@ -1028,6 +1006,7 @@ const deleteListing = async (id) => {
           </div>
         )}
 
+        {/* ADMIN PORTAL */}
         {activeTab === 'Admin Portal' && user && (
           <div className="space-y-6 animated-entrance">
             <div className="admin-summary-grid">

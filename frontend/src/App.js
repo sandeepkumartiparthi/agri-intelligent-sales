@@ -7,7 +7,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
   const [marketPrices, setMarketPrices] = useState([]);
   const [filterCrop, setFilterCrop] = useState('');
-  
+  const [advisorResult, setAdvisorResult] = useState(null);
+
   // 🌟 NEW: MARKETPLACE & ADVANCED TOOLS STATES
   const [fertilizers, setFertilizers] = useState([]);
   const [checkoutMode, setCheckoutMode] = useState(null); // null | 'details' | 'confirm'
@@ -1052,7 +1053,7 @@ const deleteListing = async (id) => {
 )}
       
       {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
-      <AIAgent marketData={marketPrices} />
+      <AIAgent marketData={marketPrices} advisorResult={advisorResult} />
     </div>
   );
 }

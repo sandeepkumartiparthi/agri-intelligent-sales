@@ -1,7 +1,29 @@
-import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck, HelpCircle} from 'lucide-react';
+import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck, HelpCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import AIAgent from './components/AIAgent';
 import axios from 'axios';
+
+// 🌟 AXIOS SECURITY & AUTH INTERCEPTORS (MOVED OUTSIDE APP TO PREVENT DUPLICATE REGISTRATIONS)
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('irsa_session_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 403) {
+      console.warn("Access 403 Restricted: User session unverified or expired.");
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
@@ -16,7 +38,7 @@ export default function App() {
   const [orderConfirm, setOrderConfirm] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [checkoutData, setCheckoutData] = useState({ name: '', address: '', phno: '', quantity: 1 });
-  
+
   // PRICE HISTORY STATES MATRIX
   const [forecastCrop, setForecastCrop] = useState('Maize');
   const [forecastData, setForecastData] = useState([]);
@@ -24,7 +46,7 @@ export default function App() {
   const [historyMeta, setHistoryPayloadMeta] = useState({ lowest: 0, average: 0, highest: 0, source: 'Initializing...', timestamp: '...' });
   const [isGraphLoading, setIsGraphLoading] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState(null);
-  
+
   // Auth contexts
   const [user, setUser] = useState(null); 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -69,12 +91,15 @@ export default function App() {
     const loadMarketplace = async () => {
       try {
         const res = await axios.get('/api/marketplace');
-        setFertilizers(res.data);
+        setFertilizers(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
-        console.error(err);
+        console.error("Marketplace loaded with fallback:", err);
+        setFertilizers([]);
       }
     };
     loadMarketplace();
+
+    return () => {};
   }, []);
 
   useEffect(() => {
@@ -127,11 +152,6 @@ export default function App() {
       }
     }
   }, [activeTab]);
-
-  useEffect(() => {
-    if (user && user.role === 'admin') fetchAdminUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
 
   useEffect(() => {
     if (activeTab === 'Price History') {
@@ -191,7 +211,15 @@ export default function App() {
     }, 300);
   };
 
-  const fetchListings = async () => {
+  const fetchListings = async (currentUser = null) => {
+    const token = localStorage.getItem('irsa_session_token');
+    
+    // Guard clause: Do not call protected endpoints if no token or user profile exists
+    if (!token && !currentUser) {
+      setListings([]);
+      return;
+    }
+
     try {
       const response = await axios.get('/api/listings', {
         headers: getSecurityHeaders()
@@ -308,7 +336,7 @@ export default function App() {
       });
       if (res.ok) {
         setFarmerForm({ cropName: '', quantity: '', locationText: '', mapLink: '', imageStream: '' });
-        fetchListings();
+        fetchListings(user);
         alert("Listing batch committed to database nodes successfully.");
       } else {
         const errPayload = await res.json();
@@ -333,7 +361,7 @@ export default function App() {
       });
 
       if (res.ok) { 
-        fetchListings();
+        fetchListings(user);
         if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
       } else {
         const errPayload = await res.json();
@@ -658,7 +686,7 @@ export default function App() {
                       <small>Posted: {item.date}</small>
                     </div>
 
-                    {(user.role === 'admin' || user.id === item.farmerId) && (
+                    {(user?.role === 'admin' || user?.id === item.farmerId) && (
                       <button 
                         onClick={() => deleteListing(item._id)} 
                         className="delete-btn"

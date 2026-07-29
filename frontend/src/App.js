@@ -555,39 +555,104 @@ const deleteListing = async (id) => {
           </div>
         )}
 
-        {activeTab === 'Market Prices' && (
+      {activeTab === 'Market Prices' && (
           <div className="glass-slab animated-entrance">
             <div className="section-header-row">
               <div>
                 <h2 className="section-title">Live National Agmarknet Valuation Indices</h2>
-                <p className="section-subtitle">Real-time commodity data matrices generated dynamically on search requests.</p>
+                <p className="section-subtitle">Real-time commodity data matrices generated dynamically across all Pan-India mandis.</p>
               </div>
               <div className="filter-group">
                 <input 
-                  type="text" placeholder="Type ANY crop name (e.g., Wheat, Rice, Garlic)..." 
-                  className="glass-input" style={{width: '320px'}}
-                  value={filterCrop} onChange={handleLiveSearchTrigger}
+                  type="text" 
+                  placeholder="Type ANY crop (e.g., Tamarind, Lemon, Garlic, Cotton)..." 
+                  className="glass-input" 
+                  style={{ width: '340px' }}
+                  value={filterCrop} 
+                  onChange={handleLiveSearchTrigger}
                 />
                 <button onClick={fetchMarketPrices} className="secondary-action-btn">Reset Grid</button>
               </div>
             </div>
+
+            {/* 🌟 AI-STYLE LIVE SCANNING / THINKING STATUS BADGE */}
+            {isSearching && (
+              <div className="animated-entrance" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '14px 20px',
+                margin: '20px 0',
+                background: 'rgba(6, 182, 212, 0.08)',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                borderRadius: '12px',
+                color: '#38bdf8',
+                fontSize: '14px',
+                fontWeight: '600',
+                boxShadow: '0 0 15px rgba(6, 182, 212, 0.15)'
+              }}>
+                <span style={{
+                  display: 'inline-block',
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: '#38bdf8',
+                  boxShadow: '0 0 8px #38bdf8',
+                  animation: 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                }}></span>
+                <span>
+                  Querying AGMARKNET, eNAM & State Marketing Boards for <strong>"{filterCrop}"</strong>...
+                </span>
+              </div>
+            )}
+
             <div className="table-container">
               <table className="glass-table">
                 <thead>
-                  <tr><th>Crop Description</th><th>Intra-Day Price (₹/Quintal)</th><th>Mandi Market Location</th><th>Verification Channel</th><th>Timestamp Checked</th></tr>
+                  <tr>
+                    <th>Crop Description</th>
+                    <th>Intra-Day Price (₹/Quintal)</th>
+                    <th>Mandi Market Location</th>
+                    <th>Verification Channel</th>
+                    <th>Timestamp Checked</th>
+                  </tr>
                 </thead>
                 <tbody>
-                  {marketPrices.filter(item => item.crop.toLowerCase().includes(filterCrop.toLowerCase().trim())).map((item, idx) => (
-                    <tr key={idx} className="animated-entrance">
-                      <td className="bold-text" style={{textTransform:'capitalize'}}>{item.crop}</td>
-                      <td><span className="price-tag">₹{item.price.toLocaleString('en-IN')}</span></td>
-                      <td style={{fontWeight:600, color:'#cbd5e1'}}>{item.mandi}</td>
-                      <td><span className="badge" style={{background: item.source.includes('Cache') ? 'rgba(234,179,8,0.1)' : 'rgba(59,130,246,0.1)', color: item.source.includes('Cache') ? '#eab308' : '#60a5fa', border: item.source.includes('Cache') ? '1px solid rgba(234,179,8,0.2)' : '1px solid rgba(59,130,246,0.2)'}}>{item.source}</span></td>
-                      <td className="dim-text">{item.date}</td>
-                    </tr>
-                  ))}
+                  {marketPrices
+                    .filter(item => item.crop.toLowerCase().includes(filterCrop.toLowerCase().trim()))
+                    .map((item, idx) => (
+                      <tr key={idx} className="animated-entrance">
+                        <td className="bold-text" style={{ textTransform: 'capitalize' }}>{item.crop}</td>
+                        <td><span className="price-tag">₹{item.price.toLocaleString('en-IN')}</span></td>
+                        <td style={{ fontWeight: 600, color: '#cbd5e1' }}>{item.mandi}</td>
+                        <td>
+                          <span 
+                            className="badge" 
+                            style={{
+                              background: item.source.includes('Cache') ? 'rgba(234,179,8,0.1)' : 'rgba(59,130,246,0.1)', 
+                              color: item.source.includes('Cache') ? '#eab308' : '#60a5fa', 
+                              border: item.source.includes('Cache') ? '1px solid rgba(234,179,8,0.2)' : '1px solid rgba(59,130,246,0.2)'
+                            }}
+                          >
+                            {item.source}
+                          </span>
+                        </td>
+                        <td className="dim-text">{item.date}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
+
+              {/* EMPTY SEARCH RESULT FALLBACK NOTICE */}
+              {!isSearching && marketPrices.filter(item => item.crop.toLowerCase().includes(filterCrop.toLowerCase().trim())).length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+                  <p style={{ fontSize: '15px', fontWeight: '500' }}>
+                    {filterCrop.trim().length > 0 
+                      ? `No live record found matching "${filterCrop}". Try hitting Enter or checking spelling.` 
+                      : 'No live market prices loaded currently.'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

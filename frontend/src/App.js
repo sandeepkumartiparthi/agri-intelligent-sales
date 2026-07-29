@@ -1071,6 +1071,7 @@ const deleteListing = async (id) => {
       </main>
 
 {/* Checkout Modal */}
+{/* Checkout Modal */}
 {selectedProduct && (
   <div className="modal-backdrop" onClick={() => { setSelectedProduct(null); setCheckoutMode(null); }}>
     <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
@@ -1098,7 +1099,6 @@ const deleteListing = async (id) => {
           <input className="glass-input" placeholder="Address" value={checkoutData.address} onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
           <input className="glass-input" placeholder="Phone" value={checkoutData.phno} onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
           
-          {/* 🌟 RESTRUCTURED QUANTITY ROW */}
           <div className="modal-qty-row">
             <span style={{ fontSize: '15px' }}>Quantity:</span>
             <button 
@@ -1148,32 +1148,6 @@ const deleteListing = async (id) => {
         <AIAgent marketData={marketPrices || []} advisorResult={advisorResult || {}} />
       )}
 
-    </div> {/* 👈 Closes <div className="irsa-app-wrapper"> */}
-  );
-}
-
-{selectedListing && (
-  <div className="modal-backdrop" onClick={() => setSelectedListing(null)}>
-    <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
-      <div className="modal-body">
-        <button className="close-btn" onClick={() => setSelectedListing(null)}>×</button>
-        <h3 className="section-title mb-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)', paddingBottom:'10px'}}>{selectedListing.cropName} Batch Details</h3>
-        {selectedListing.imageStream && <img src={selectedListing.imageStream} className="modal-img" alt="Yield tracking vector asset"/>}
-        <div className="vertical-form" style={{fontSize:'14px', gap:'10px', color:'#cbd5e1'}}>
-          <p><strong>Producer Account Name:</strong> {selectedListing.farmerName}</p>
-          <p><strong>Available Cargo Quantity:</strong> <span style={{color:'#34d399', fontWeight:700}}>{selectedListing.quantity} Quintals</span></p>
-          <p><strong>Regional Hub Depot Location:</strong> {selectedListing.locationText}</p>
-          <a href={selectedListing.mapLink} target="_blank" rel="noreferrer" className="map-btn"><MapPin size={13}/> Open Google Maps Navigation Route</a>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-      
-   {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
-{marketPrices && (
-  <AIAgent marketData={marketPrices || []} advisorResult={advisorResult || {}} />
-)}
     </div>
   );
 }

@@ -1070,80 +1070,80 @@ const deleteListing = async (id) => {
 
       </main>
 
-{/* Checkout Modal */}
-{/* Checkout Modal */}
-{selectedProduct && (
-  <div className="modal-backdrop" onClick={() => { setSelectedProduct(null); setCheckoutMode(null); }}>
-    <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
-      {checkoutMode === 'confirm' ? (
-        <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '64px', height: '64px', margin: '0 auto 15px', filter: 'drop-shadow(0 0 8px rgba(52, 211, 153, 0.3))' }}>
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-          <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '10px', color: '#34d399' }}>Order Confirmed!</h2>
-          <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '6px' }}>Order ID: <b>{orderConfirm?.orderId || 'IRSA-XXXX'}</b></p>
-          <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '20px' }}>Estimated Delivery: <b>{orderConfirm?.deliveryDate || '2-3 Business Days'}</b></p>
-          <button 
-            onClick={() => { setSelectedProduct(null); setCheckoutMode(null); }} 
-            className="form-submit-btn"
-          >
-            Close & Return
-          </button>
-        </div>
-      ) : (
-        <>
-          <h3>Purchase: {selectedProduct.name}</h3>
-          
-          <input className="glass-input" placeholder="Name" value={checkoutData.name} onChange={e => setCheckoutData({...checkoutData, name: e.target.value})} />
-          <input className="glass-input" placeholder="Address" value={checkoutData.address} onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
-          <input className="glass-input" placeholder="Phone" value={checkoutData.phno} onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
-          
-          <div className="modal-qty-row">
-            <span style={{ fontSize: '15px' }}>Quantity:</span>
-            <button 
-              type="button" 
-              onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Math.max(1, Number(prev.quantity) - 1) }))}
-              className="modal-qty-btn"
-            >
-              -
-            </button>
-            <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{checkoutData.quantity || 1}</span>
-            <button 
-              type="button" 
-              onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Number(prev.quantity) + 1 }))}
-              className="modal-qty-btn"
-            >
-              +
-            </button>
+      {/* Checkout Modal */}
+      {selectedProduct && (
+        <div className="modal-backdrop" onClick={() => { setSelectedProduct(null); setCheckoutMode(null); }}>
+          <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
+            {checkoutMode === 'confirm' ? (
+              <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '64px', height: '64px', margin: '0 auto 15px', filter: 'drop-shadow(0 0 8px rgba(52, 211, 153, 0.3))' }}>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '10px', color: '#34d399' }}>Order Confirmed!</h2>
+                <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '6px' }}>Order ID: <b>{orderConfirm?.orderId || 'IRSA-XXXX'}</b></p>
+                <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '20px' }}>Estimated Delivery: <b>{orderConfirm?.deliveryDate || '2-3 Business Days'}</b></p>
+                <button 
+                  onClick={() => { setSelectedProduct(null); setCheckoutMode(null); }} 
+                  className="form-submit-btn"
+                >
+                  Close & Return
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3>Purchase: {selectedProduct.name}</h3>
+                
+                <input className="glass-input" placeholder="Name" value={checkoutData.name} onChange={e => setCheckoutData({...checkoutData, name: e.target.value})} />
+                <input className="glass-input" placeholder="Address" value={checkoutData.address} onChange={e => setCheckoutData({...checkoutData, address: e.target.value})} />
+                <input className="glass-input" placeholder="Phone" value={checkoutData.phno} onChange={e => setCheckoutData({...checkoutData, phno: e.target.value})} />
+                
+                <div className="modal-qty-row">
+                  <span style={{ fontSize: '15px' }}>Quantity:</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Math.max(1, Number(prev.quantity) - 1) }))}
+                    className="modal-qty-btn"
+                  >
+                    -
+                  </button>
+                  <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{checkoutData.quantity || 1}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setCheckoutData(prev => ({ ...prev, quantity: Number(prev.quantity) + 1 }))}
+                    className="modal-qty-btn"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn" style={{ marginTop: '10px' }}>Checkout</button>
+              </>
+            )}
           </div>
-
-          <button onClick={() => processPurchase(selectedProduct)} className="form-submit-btn" style={{ marginTop: '10px' }}>Checkout</button>
-        </>
-      )}
-    </div>
-  </div>
-)}
-
-{selectedListing && (
-  <div className="modal-backdrop" onClick={() => setSelectedListing(null)}>
-    <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
-      <div className="modal-body">
-        <button className="close-btn" onClick={() => setSelectedListing(null)}>×</button>
-        <h3 className="section-title mb-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)', paddingBottom:'10px'}}>{selectedListing.cropName} Batch Details</h3>
-        {selectedListing.imageStream && <img src={selectedListing.imageStream} className="modal-img" alt="Yield tracking vector asset"/>}
-        <div className="vertical-form" style={{fontSize:'14px', gap:'10px', color:'#cbd5e1'}}>
-          <p><strong>Producer Account Name:</strong> {selectedListing.farmerName}</p>
-          <p><strong>Available Cargo Quantity:</strong> <span style={{color:'#34d399', fontWeight:700}}>{selectedListing.quantity} Quintals</span></p>
-          <p><strong>Regional Hub Depot Location:</strong> {selectedListing.locationText}</p>
-          <a href={selectedListing.mapLink} target="_blank" rel="noreferrer" className="map-btn"><MapPin size={13}/> Open Google Maps Navigation Route</a>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-      
-      {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
+      )}
+
+      {/* Listing Detail Modal */}
+      {selectedListing && (
+        <div className="modal-backdrop" onClick={() => setSelectedListing(null)}>
+          <div className="modal-slab-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-body">
+              <button className="close-btn" onClick={() => setSelectedListing(null)}>×</button>
+              <h3 className="section-title mb-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)', paddingBottom:'10px'}}>{selectedListing.cropName} Batch Details</h3>
+              {selectedListing.imageStream && <img src={selectedListing.imageStream} className="modal-img" alt="Yield tracking vector asset"/>}
+              <div className="vertical-form" style={{fontSize:'14px', gap:'10px', color:'#cbd5e1'}}>
+                <p><strong>Producer Account Name:</strong> {selectedListing.farmerName}</p>
+                <p><strong>Available Cargo Quantity:</strong> <span style={{color:'#34d399', fontWeight:700}}>{selectedListing.quantity} Quintals</span></p>
+                <p><strong>Regional Hub Depot Location:</strong> {selectedListing.locationText}</p>
+                <a href={selectedListing.mapLink} target="_blank" rel="noreferrer" className="map-btn"><MapPin size={13}/> Open Google Maps Navigation Route</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Agent Mount */}
       {marketPrices && (
         <AIAgent marketData={marketPrices || []} advisorResult={advisorResult || {}} />
       )}

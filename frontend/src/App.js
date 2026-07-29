@@ -8,6 +8,7 @@ export default function App() {
   const [marketPrices, setMarketPrices] = useState([]);
   const [filterCrop, setFilterCrop] = useState('');
   const [advisorResult, setAdvisorResult] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   // 🌟 NEW: MARKETPLACE & ADVANCED TOOLS STATES
   const [fertilizers, setFertilizers] = useState([]);

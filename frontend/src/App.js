@@ -771,93 +771,89 @@ const deleteListing = async (id) => {
             </div>
 
             {/* Main Interactive Chart Grid Display Layer */}
-          <div 
-  style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none', position: 'relative' }}
-  onMouseMove={(e) => {
-    // 1. Guard against empty data
-    if (!forecastData || forecastData.length <= 1) return;
+<div 
+            style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none', position: 'relative' }}
+            onMouseMove={(e) => {
+              if (!forecastData || forecastData.length <= 1) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const totalPoints = forecastData.length - 1;
+              const idx = Math.max(0, Math.min(totalPoints, Math.round((x / rect.width) * totalPoints)));
 
-    // 2. Lock to container rect (e.currentTarget), NOT child elements (e.target)
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-
-    // 3. Clamp index safely between 0 and array boundary
-    const totalPoints = forecastData.length - 1;
-    const idx = Math.max(0, Math.min(totalPoints, Math.round((x / rect.width) * totalPoints)));
-
-    if (forecastData[idx] !== undefined) {
-      setHoveredPoint({ 
-        x: (idx / totalPoints) * 1000, 
-        val: forecastData[idx], 
-        date: axisLabels[idx] || 'Live Spot' 
-      });
-    }
-  }}
-  onMouseLeave={() => setHoveredPoint(null)}
->
-  {hoveredPoint && (
-    <div style={{ position: 'absolute', left: `${Math.min(85, Math.max(5, (hoveredPoint.x / 1000) * 90))}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10, pointerEvents: 'none' }}>
-      {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
-    </div>
-  )}
-
-  {isGraphLoading && (
-    <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
-      Re-indexing verified marketplace timeline arrays...
-    </div>
-  )}
-
-  <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
-    <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
-          <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
-        </linearGradient>
-      </defs>
-
-      {/* Horizontal dotted references rules */}
-      <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
-      <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
-      <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
-
- {forecastData && forecastData.length > 1 && (
-  <>
-    <path
-      d={`M ${forecastData.map((val, idx) => {
-        const x = (idx / (forecastData.length - 1)) * 1000;
-        const padFloor = (historyMeta.lowest || 0) * 0.8;
-        const padCeil = (historyMeta.highest || 100) * 1.2;
-        const range = (padCeil - padFloor) || 1; // 👈 Prevents division by zero
-        const y = 260 - (((val - padFloor) / range) * 260);
-        return `${x} ${isNaN(y) ? 130 : y}`; // 👈 Safeguard against NaN
-      }).join(' L ')}`}
-      fill="none"
-      stroke="#06b6d4"
-      strokeWidth="3"
-    />
-    <path
-      d={`M 0 260 L ${forecastData.map((val, idx) => {
-        const x = (idx / (forecastData.length - 1)) * 1000;
-        const padFloor = (historyMeta.lowest || 0) * 0.8;
-        const padCeil = (historyMeta.highest || 100) * 1.2;
-        const range = (padCeil - padFloor) || 1;
-        const y = 260 - (((val - padFloor) / range) * 260);
-        return `${x} ${isNaN(y) ? 130 : y}`;
-      }).join(' L ')} L 1000 260 Z`}
-      fill="url(#frontAreaGradient)"
-    />
-  </>
-)}
-
-              {/* X-Axis Horizontal String Labels Axis Mapping */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingLeft: '6px' }}>
-                {axisLabels.map((item, index) => (
-                  <div key={index} style={{ fontSize: '10px', color: '#475569', transform: 'rotate(-20deg)', whiteSpace: 'nowrap' }}>
-                    {item}
-                  </div>
-                ))}
+              if (forecastData[idx] !== undefined) {
+                setHoveredPoint({ 
+                  x: (idx / totalPoints) * 1000, 
+                  val: forecastData[idx], 
+                  date: axisLabels[idx] || 'Live Spot' 
+                });
+              }
+            }}
+            onMouseLeave={() => setHoveredPoint(null)}
+          >
+            {hoveredPoint && (
+              <div style={{ position: 'absolute', left: `${Math.min(85, Math.max(5, (hoveredPoint.x / 1000) * 90))}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10, pointerEvents: 'none' }}>
+                {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
               </div>
+            )}
+
+            {isGraphLoading && (
+              <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
+                Re-indexing verified marketplace timeline arrays...
+              </div>
+            )}
+
+            <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
+              <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
+                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
+                  </linearGradient>
+                </defs>
+
+                {/* Horizontal dotted references rules */}
+                <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
+                <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
+                <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
+
+                {forecastData && forecastData.length > 1 && (
+                  <>
+                    <path
+                      d={`M ${forecastData.map((val, idx) => {
+                        const x = (idx / (forecastData.length - 1)) * 1000;
+                        const padFloor = (historyMeta.lowest || 0) * 0.8;
+                        const padCeil = (historyMeta.highest || 100) * 1.2;
+                        const range = (padCeil - padFloor) || 1;
+                        const y = 260 - (((val - padFloor) / range) * 260);
+                        return `${x} ${isNaN(y) ? 130 : y}`;
+                      }).join(' L ')}`}
+                      fill="none"
+                      stroke="#06b6d4"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d={`M 0 260 L ${forecastData.map((val, idx) => {
+                        const x = (idx / (forecastData.length - 1)) * 1000;
+                        const padFloor = (historyMeta.lowest || 0) * 0.8;
+                        const padCeil = (historyMeta.highest || 100) * 1.2;
+                        const range = (padCeil - padFloor) || 1;
+                        const y = 260 - (((val - padFloor) / range) * 260);
+                        return `${x} ${isNaN(y) ? 130 : y}`;
+                      }).join(' L ')} L 1000 260 Z`}
+                      fill="url(#frontAreaGradient)"
+                    />
+                  </>
+                )}
+              </svg> {/* 👈 Added missing closing tag */}
+            </div>
+
+            {/* X-Axis Horizontal String Labels Axis Mapping */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingLeft: '6px' }}>
+              {axisLabels.map((item, index) => (
+                <div key={index} style={{ fontSize: '10px', color: '#475569', transform: 'rotate(-20deg)', whiteSpace: 'nowrap' }}>
+                  {item}
+                </div>
+              ))}
             </div>
 
             {/* Timeline Filter Trigger Blocks Grid */}

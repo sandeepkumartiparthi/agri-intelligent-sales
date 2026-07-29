@@ -145,11 +145,17 @@ useEffect(() => {
     } catch (e) { console.error(e); }
   };
 
-  const handleLiveSearchTrigger = (e) => {
+const handleLiveSearchTrigger = (e) => {
     const queryText = e.target.value;
     setFilterCrop(queryText);
 
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    if (queryText.trim().length > 1) {
+      setIsSearching(true); // 🌟 Start "Fetching..." indicator
+    } else {
+      setIsSearching(false);
+    }
 
     searchDebounceRef.current = setTimeout(async () => {
       if (queryText.trim().length > 1) {
@@ -171,11 +177,17 @@ useEffect(() => {
             
             setMarketPrices(prev => [newLiveRow, ...prev.filter(i => i.crop.toLowerCase() !== data.crop.toLowerCase())]);
           }
-        } catch (err) { console.log("Bypassed search processing"); }
+        } catch (err) { 
+          console.log("Bypassed search processing"); 
+        } finally {
+          setIsSearching(false); // 🌟 Turn off "Fetching..." indicator
+        }
+      } else {
+        setIsSearching(false);
       }
-    }, 250);
+    }, 300);
   };
-
+  
 const fetchListings = async (user) => {
   try {
     // If no user is logged in, you might want to fetch nothing or public data

@@ -43,13 +43,13 @@ export default function App() {
   const searchDebounceRef = useRef(null);
 
   // 🌟 NEW UPDATION: Secure Token Injection Core Utility
-  const getSecurityHeaders = (contentType = 'application/json') => {
-    const token = localStorage.getItem('irsa_session_token');
-    const headers = {};
-    if (contentType) headers['Content-Type'] = contentType;
-    if (token) headers['Authorization'] = token;
-    return headers;
-  };
+const getSecurityHeaders = (contentType = 'application/json') => {
+  const token = localStorage.getItem('irsa_session_token');
+  const headers = {};
+  if (contentType) headers['Content-Type'] = contentType;
+  if (token) headers['Authorization'] = `Bearer ${token}`; // 👈 Added Bearer prefix
+  return headers;
+};
 
 useEffect(() => {
   const activeProfile = localStorage.getItem('irsa_user_profile');
@@ -65,64 +65,70 @@ useEffect(() => {
   }
 
   fetchMarketPrices();
-  
-  // Pass the user if it exists, otherwise fetch generic
   fetchListings(currentUser);
-  
-  // Load marketplace data
-  axios.get('/api/marketplace')
-    .then(res => setFertilizers(res.data))
-    .catch(console.error);
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
+  // Explicit block body (returns undefined)
+  const loadMarketplace = async () => {
+    try {
+      const res = await axios.get('/api/marketplace');
+      setFertilizers(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  loadMarketplace();
 }, []);
 
+useEffect(() => {
+  if (user && user.role === 'admin') {
+    fetchAdminUsers();
+  }
+}, [user]);
+
   // 🌟 NATIVE GOOGLE POPUP RENDERING EFFECT
-  useEffect(() => {
-    /* global google */
-    if (window.google && activeTab === 'Auth Portal') {
-      // Clears previously mounted buttons to prevent duplicates when tabs are toggled
-      document.getElementById("google-button-wrapper").innerHTML = "";
+useEffect(() => {
+  /* global google */
+  if (window.google && activeTab === 'Auth Portal') {
+    const wrapper = document.getElementById("google-button-wrapper");
+    if (wrapper) wrapper.innerHTML = ""; // 👈 Check element exists before mutating
 
-      google.accounts.id.initialize({
-        client_id: "648741837176-4hlphht3dkrmccqk6p0180l7jmth9akr.apps.googleusercontent.com",
-        callback: async (response) => {
-          const selectedRole = document.getElementById('google-role-select').value;
-          
-          try {
-            // Sends Google's secure JWT credential token and selected dropdown role to your Render backend
-            const res = await fetch('https://agri-intelligent-sales.onrender.com/api/auth/google-verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                credential: response.credential,
-                role: selectedRole 
-              })
-            });
+    google.accounts.id.initialize({
+      client_id: "648741837176-4hlphht3dkrmccqk6p0180l7jmth9akr.apps.googleusercontent.com",
+      callback: async (response) => {
+        const roleElem = document.getElementById('google-role-select');
+        const selectedRole = roleElem ? roleElem.value : 'farmer';
+        
+        try {
+          const res = await fetch('https://agri-intelligent-sales.onrender.com/api/auth/google-verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential, role: selectedRole })
+          });
 
-            const data = await res.json();
-            if (data.success) {
-              alert(`Google authentication verified as ${selectedRole.toUpperCase()}!`);
-              localStorage.setItem('irsa_session_token', data.token);
-              localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
-              setUser(data.user);
-              setActiveTab('Home');
-            } else {
-              alert(`Authentication failed: ${data.message}`);
-            }
-          } catch (err) {
-            alert("Pipeline offline or connectivity error during backend verification.");
+          const data = await res.json();
+          if (data.success) {
+            alert(`Google authentication verified as ${selectedRole.toUpperCase()}!`);
+            localStorage.setItem('irsa_session_token', data.token);
+            localStorage.setItem('irsa_user_profile', JSON.stringify(data.user));
+            setUser(data.user);
+            setActiveTab('Home');
+          } else {
+            alert(`Authentication failed: ${data.message}`);
           }
+        } catch (err) {
+          alert("Pipeline offline or connectivity error during backend verification.");
         }
-      });
+      }
+    });
 
-      // Renders the official native Google Button slab
+    if (wrapper) {
       google.accounts.id.renderButton(
-        document.getElementById("google-button-wrapper"),
+        wrapper,
         { theme: "filled_black", size: "large", shape: "rectangular", width: "100%" }
       );
     }
-  }, [activeTab]);
+  }
+}, [activeTab]);
 
   useEffect(() => {
     if (user && user.role === 'admin') fetchAdminUsers();
@@ -190,16 +196,13 @@ const handleLiveSearchTrigger = (e) => {
 
 const fetchListings = async () => {
   try {
-    const token = localStorage.getItem('token'); // Grab stored user token
     const response = await axios.get('/api/listings', {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : ''
-      }
+      headers: getSecurityHeaders()
     });
-    setListings(response.data);
+    setListings(Array.isArray(response.data) ? response.data : []);
   } catch (error) {
     console.error("Failed to fetch listings:", error);
-    setListings([]); // Set empty array fallback so UI doesn't crash
+    setListings([]); // Safe fallback to prevent .map crash
   }
 };
 
@@ -768,68 +771,84 @@ const deleteListing = async (id) => {
             </div>
 
             {/* Main Interactive Chart Grid Display Layer */}
-            <div style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none' }}
-              onMouseMove={(e) => {
-                const rect = e.target.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const idx = Math.round((x / rect.width) * (forecastData.length - 1));
-                if (forecastData[idx]) setHoveredPoint({ x: (idx / (forecastData.length - 1)) * 1000, val: forecastData[idx], date: axisLabels[idx] });
-              }}
-              onMouseLeave={() => setHoveredPoint(null)}
-            >
-              {hoveredPoint && (
-                <div style={{ position: 'absolute', left: `${(hoveredPoint.x / 1000) * 90}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10 }}>
-                  {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
-                </div>
-              )}
-              {isGraphLoading && (
-                <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
-                  Re-indexing verified marketplace timeline arrays...
-                </div>
-              )}
+          <div 
+  style={{ backgroundColor: '#0f172a', padding: '30px 20px', borderRadius: '0 0 6px 6px', border: '1px solid rgba(255,255,255,0.05)', borderTop: 'none', position: 'relative' }}
+  onMouseMove={(e) => {
+    // 1. Guard against empty data
+    if (!forecastData || forecastData.length <= 1) return;
 
-              <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
-                <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
-                      <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
-                    </linearGradient>
-                  </defs>
+    // 2. Lock to container rect (e.currentTarget), NOT child elements (e.target)
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
 
-                  {/* Horizontal dotted references rules */}
-                  <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
-                  <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
-                  <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
+    // 3. Clamp index safely between 0 and array boundary
+    const totalPoints = forecastData.length - 1;
+    const idx = Math.max(0, Math.min(totalPoints, Math.round((x / rect.width) * totalPoints)));
 
-                  {forecastData.length > 1 && (
-                    <>
-                      <path
-                        d={`M ${forecastData.map((val, idx) => {
-                          const x = (idx / (forecastData.length - 1)) * 1000;
-                          const padFloor = historyMeta.lowest * 0.8;
-                          const padCeil = historyMeta.highest * 1.2;
-                          const y = 260 - (((val - padFloor) / (padCeil - padFloor)) * 260);
-                          return `${x} ${y}`;
-                        }).join(' L ')}`}
-                        fill="none"
-                        stroke="#06b6d4"
-                        strokeWidth="3"
-                      />
-                      <path
-                        d={`M 0 260 L ${forecastData.map((val, idx) => {
-                          const x = (idx / (forecastData.length - 1)) * 1000;
-                          const padFloor = historyMeta.lowest * 0.8;
-                          const padCeil = historyMeta.highest * 1.2;
-                          const y = 260 - (((val - padFloor) / (padCeil - padFloor)) * 260);
-                          return `${x} ${y}`;
-                        }).join(' L ')} L 1000 260 Z`}
-                        fill="url(#frontAreaGradient)"
-                      />
-                    </>
-                  )}
-                </svg>
-              </div>
+    if (forecastData[idx] !== undefined) {
+      setHoveredPoint({ 
+        x: (idx / totalPoints) * 1000, 
+        val: forecastData[idx], 
+        date: axisLabels[idx] || 'Live Spot' 
+      });
+    }
+  }}
+  onMouseLeave={() => setHoveredPoint(null)}
+>
+  {hoveredPoint && (
+    <div style={{ position: 'absolute', left: `${Math.min(85, Math.max(5, (hoveredPoint.x / 1000) * 90))}%`, top: '10px', background: '#1e293b', border: '1px solid #34d399', padding: '10px', borderRadius: '8px', color: '#fff', fontSize: '12px', zIndex: 10, pointerEvents: 'none' }}>
+      {hoveredPoint.date}: <strong style={{color: '#34d399'}}>₹{hoveredPoint.val}</strong>
+    </div>
+  )}
+
+  {isGraphLoading && (
+    <div style={{ position: 'absolute', top: '120px', left: 0, right: 0, bottom: '80px', backgroundColor: 'rgba(15,23,42,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#06b6d4', zIndex: 5, fontSize: '14px', fontWeight: 600 }}>
+      Re-indexing verified marketplace timeline arrays...
+    </div>
+  )}
+
+  <div style={{ height: '260px', width: '100%', position: 'relative', borderLeft: '1px solid #334155', borderBottom: '1px solid #334155' }}>
+    <svg style={{ width: '100%', height: '100%', overflow: 'visible' }} viewBox="0 0 1000 260" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="frontAreaGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.25"/>
+          <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
+        </linearGradient>
+      </defs>
+
+      {/* Horizontal dotted references rules */}
+      <line x1="0" y1="65" x2="1000" y2="65" stroke="#1e293b" strokeDasharray="4,4" />
+      <line x1="0" y1="130" x2="1000" y2="130" stroke="#1e293b" strokeDasharray="4,4" />
+      <line x1="0" y1="195" x2="1000" y2="195" stroke="#1e293b" strokeDasharray="4,4" />
+
+ {forecastData && forecastData.length > 1 && (
+  <>
+    <path
+      d={`M ${forecastData.map((val, idx) => {
+        const x = (idx / (forecastData.length - 1)) * 1000;
+        const padFloor = (historyMeta.lowest || 0) * 0.8;
+        const padCeil = (historyMeta.highest || 100) * 1.2;
+        const range = (padCeil - padFloor) || 1; // 👈 Prevents division by zero
+        const y = 260 - (((val - padFloor) / range) * 260);
+        return `${x} ${isNaN(y) ? 130 : y}`; // 👈 Safeguard against NaN
+      }).join(' L ')}`}
+      fill="none"
+      stroke="#06b6d4"
+      strokeWidth="3"
+    />
+    <path
+      d={`M 0 260 L ${forecastData.map((val, idx) => {
+        const x = (idx / (forecastData.length - 1)) * 1000;
+        const padFloor = (historyMeta.lowest || 0) * 0.8;
+        const padCeil = (historyMeta.highest || 100) * 1.2;
+        const range = (padCeil - padFloor) || 1;
+        const y = 260 - (((val - padFloor) / range) * 260);
+        return `${x} ${isNaN(y) ? 130 : y}`;
+      }).join(' L ')} L 1000 260 Z`}
+      fill="url(#frontAreaGradient)"
+    />
+  </>
+)}
 
               {/* X-Axis Horizontal String Labels Axis Mapping */}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', paddingLeft: '6px' }}>
@@ -1128,8 +1147,10 @@ const deleteListing = async (id) => {
   </div>
 )}
       
-      {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
-      <AIAgent marketData={marketPrices} advisorResult={advisorResult} />
+   {/* 🌟 AI AGENT INSTANTLY AVAILABLE ON ALL PAGES */}
+{marketPrices && (
+  <AIAgent marketData={marketPrices || []} advisorResult={advisorResult || {}} />
+)}
     </div>
   );
 }

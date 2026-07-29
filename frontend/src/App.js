@@ -187,21 +187,19 @@ const handleLiveSearchTrigger = (e) => {
       }
     }, 300);
   };
-  
-const fetchListings = async (user) => {
-  try {
-    // If no user is logged in, you might want to fetch nothing or public data
-    if (!user) {
-      const res = await axios.get('/api/listings'); // Public view
-      setListings(res.data);
-      return;
-    }
 
-    // Role-based fetch: pass role and id to backend
-    const res = await axios.get(`/api/listings?role=${user.role}&id=${user.id}`);
-    setListings(res.data);
-  } catch (err) {
-    console.error("Failed to fetch listings:", err);
+const fetchListings = async () => {
+  try {
+    const token = localStorage.getItem('token'); // Grab stored user token
+    const response = await axios.get('/api/listings', {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : ''
+      }
+    });
+    setListings(response.data);
+  } catch (error) {
+    console.error("Failed to fetch listings:", error);
+    setListings([]); // Set empty array fallback so UI doesn't crash
   }
 };
 

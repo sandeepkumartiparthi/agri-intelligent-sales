@@ -116,7 +116,7 @@ export default function CropHistory() {
                             fontSize: '14px',
                             fontWeight: 'bold',
                             outline: 'none',
-                            width: '240px'
+                            width: '260px'
                         }}
                     />
                     <button
@@ -199,7 +199,7 @@ export default function CropHistory() {
 
                 {isLoading && (
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(17, 34, 64, 0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '16px', color: '#06B6D4', zIndex: 10, fontWeight: 'bold' }}>
-                        Re-indexing live market coordinates...
+                        Re-indexing AGMARKNET & live market coordinates...
                     </div>
                 )}
                 
@@ -305,7 +305,7 @@ export default function CropHistory() {
 
             {/* Operational System Metadata Tracking Log Footer */}
             <div style={{ marginTop: '30px', padding: '16px', backgroundColor: '#1E293B', borderRadius: '6px', fontSize: '12px', color: '#94A3B8', fontFamily: 'Consolas, monospace' }}>
-                📍 Real Data Connection Pipeline Active | Origin Stream Source: {isLoading ? 'Querying...' : (telemetryPayload?.source || 'Agmarknet Stream')} | System Sync Snapshot Stamp: {isLoading ? '...' : (telemetryPayload?.timestamp || new Date().toLocaleDateString())}
+                📍 Real Data Connection Pipeline Active | Origin Stream Source: <strong style={{ color: '#06B6D4' }}>{isLoading ? 'Querying Portals...' : (telemetryPayload?.source || 'Agmarknet Stream')}</strong> | Mandi Hub: <strong style={{ color: '#F1F5F9' }}>{telemetryPayload?.mandi || 'National Hub'}</strong> | System Sync Snapshot Stamp: {isLoading ? '...' : (telemetryPayload?.timestamp || new Date().toLocaleDateString())}
             </div>
         </div>
     );

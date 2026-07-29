@@ -1,7 +1,7 @@
 import { ArrowUpRight, HelpCircle, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import AIAgent from './components/AIAgent';
-import CropHistory from './CropHistory'; // 🌟 Clean component import
+import CropHistory from './components/CropHistory';
 import axios from 'axios';
 
 // 🌟 AXIOS SECURITY & AUTH INTERCEPTORS

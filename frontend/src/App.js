@@ -1,9 +1,9 @@
-import { ArrowUpRight, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck, HelpCircle } from 'lucide-react';
+import { ArrowUpRight, HelpCircle, Home, Image, LayoutGrid, LineChart, LogIn, LogOut, MapPin, PlusCircle, ShoppingBag, Sparkles, Trash2, UserCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import AIAgent from './components/AIAgent';
 import axios from 'axios';
 
-// 🌟 AXIOS SECURITY & AUTH INTERCEPTORS (MOVED OUTSIDE APP TO PREVENT DUPLICATE REGISTRATIONS)
+// 🌟 AXIOS SECURITY & AUTH INTERCEPTORS (OUTSIDE APP TO PREVENT DUPLICATE REGISTRATIONS)
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('irsa_session_token');
@@ -98,8 +98,6 @@ export default function App() {
       }
     };
     loadMarketplace();
-
-    return () => {};
   }, []);
 
   useEffect(() => {
@@ -122,7 +120,7 @@ export default function App() {
           const selectedRole = roleElem ? roleElem.value : 'farmer';
           
           try {
-            const res = await fetch('https://agri-intelligent-sales.onrender.com/api/auth/google-verify', {
+            const res = await fetch('/api/auth/google-verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ credential: response.credential, role: selectedRole })
@@ -153,21 +151,22 @@ export default function App() {
     }
   }, [activeTab]);
 
+  // 1. DYNAMIC TAB & CROP SYNC EFFECT
   useEffect(() => {
-    if (activeTab === 'Price History') {
+    if (activeTab === 'Price History' && forecastCrop && forecastCrop.trim() !== '') {
       generatePriceHistoryCurve(forecastCrop, historyScope);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historyScope, activeTab]);
+  }, [historyScope, activeTab, forecastCrop]);
 
   const fetchMarketPrices = async () => {
     try {
       const res = await fetch('/api/market-prices', { headers: getSecurityHeaders() });
       const data = await res.json();
       setMarketPrices(Array.isArray(data) ? data : []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Market prices fetch error:", e); }
   };
 
+  // 2. REAL-TIME SEARCH TRIGGER (SYNCS SEARCH TABLE & HISTORY GRAPH)
   const handleLiveSearchTrigger = (e) => {
     const queryText = e.target.value;
     setFilterCrop(queryText);
@@ -181,27 +180,34 @@ export default function App() {
     }
 
     searchDebounceRef.current = setTimeout(async () => {
-      if (queryText.trim().length > 1) {
+      const trimmedQuery = queryText.trim();
+      if (trimmedQuery.length > 1) {
         try {
+          setForecastCrop(trimmedQuery);
+
           const res = await fetch('/api/history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ crop: queryText.trim(), range: '1Y' })
+            body: JSON.stringify({ crop: trimmedQuery, range: historyScope || '1Y' })
           });
+          
           const data = await res.json();
           if (data && data.price) {
             const newLiveRow = {
-              crop: data.crop,
+              crop: data.crop || trimmedQuery,
               price: data.price,
-              mandi: data.mandi || "National Hub",
-              source: data.source || "Live Stream Engine",
+              mandi: data.mandi || "National Trade Hub",
+              source: data.source || "AGMARKNET Stream",
               date: data.timestamp || new Date().toLocaleString()
             };
             
-            setMarketPrices(prev => [newLiveRow, ...prev.filter(i => i.crop.toLowerCase() !== data.crop.toLowerCase())]);
+            setMarketPrices(prev => [
+              newLiveRow, 
+              ...prev.filter(i => i.crop.toLowerCase() !== (data.crop || trimmedQuery).toLowerCase())
+            ]);
           }
         } catch (err) { 
-          console.log("Bypassed search processing"); 
+          console.log("Bypassed search processing:", err); 
         } finally {
           setIsSearching(false);
         }
@@ -214,7 +220,6 @@ export default function App() {
   const fetchListings = async (currentUser = null) => {
     const token = localStorage.getItem('irsa_session_token');
     
-    // Guard clause: Do not call protected endpoints if no token or user profile exists
     if (!token && !currentUser) {
       setListings([]);
       return;
@@ -244,40 +249,54 @@ export default function App() {
     } catch (e) { setAdminUsers([]); }
   };
 
+  // 3. GENERATE PRICE HISTORY CURVE (DYNAMIC & FAILSAFE)
   const generatePriceHistoryCurve = async (targetCropName = forecastCrop, selectedRange = historyScope) => {
+    const target = (targetCropName || forecastCrop || '').trim();
+    if (!target) return;
+
     try {
       setIsGraphLoading(true);
       setHoveredPoint(null);
+      
       const res = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ crop: targetCropName, range: selectedRange })
+        body: JSON.stringify({ crop: target, range: selectedRange })
       });
+      
       const data = await res.json();
-      if (data.success) {
+      if (data && data.success) {
         setForecastData(data.historicalPointsArray || []);
         setHistoryPayloadMeta({
           lowest: data.lowest || 0,
           average: data.average || 0,
           highest: data.highest || 0,
-          source: data.source || 'Verified Source',
-          timestamp: data.timestamp || 'Just Now'
+          source: data.source || 'Agmarknet Index',
+          timestamp: data.timestamp || new Date().toLocaleDateString('en-IN')
         });
       }
-    } catch (e) { console.error("History retrieval interrupted:", e); }
-    finally { setIsGraphLoading(false); }
+    } catch (e) { 
+      console.error("History retrieval interrupted:", e); 
+    } finally { 
+      setIsGraphLoading(false); 
+    }
   };
 
+  // 4. DYNAMIC X-AXIS TIMELINE LABELS
   const getTimelineLabelsXAxis = () => {
     const pointsCount = forecastData.length;
+    if (pointsCount === 0) return [];
+    
     const labels = [];
     for (let i = 1; i <= pointsCount; i++) {
       if (historyScope === '1M') labels.push(`Day ${i}`);
-      else if (historyScope === '6M') labels.push(`M-${i}`);
-      else if (historyScope === '1Y') labels.push(`Int ${i}`);
+      else if (historyScope === '6M') labels.push(`Wk ${i}`);
+      else if (historyScope === '1Y') labels.push(`M-${i}`);
       else if (historyScope === '5Y') labels.push(`Yr ${i}`);
+      else labels.push(`P-${i}`);
     }
-    if (labels.length > 0) labels[labels.length - 1] = "Live Spot";
+    
+    labels[labels.length - 1] = "Live Spot";
     return labels;
   };
 
@@ -348,20 +367,20 @@ export default function App() {
   const deleteListing = async (id) => {
     if (!window.confirm("Confirm listing removal from cloud nodes?")) return;
     
-    const user = JSON.parse(localStorage.getItem('irsa_user_profile') || '{}');
+    const activeUser = JSON.parse(localStorage.getItem('irsa_user_profile') || '{}');
 
     try {
       const res = await fetch(`/api/listings/${id}`, { 
         method: 'DELETE',
         headers: { 
           'Content-Type': 'application/json',
-          'x-user-role': user.role,
-          'x-user-id': user.id 
+          'x-user-role': activeUser.role,
+          'x-user-id': activeUser.id 
         }
       });
 
       if (res.ok) { 
-        fetchListings(user);
+        fetchListings(activeUser);
         if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
       } else {
         const errPayload = await res.json();
@@ -396,7 +415,7 @@ export default function App() {
     
     try {
       setIsGraphLoading(true);
-      const res = await axios.post('https://agri-intelligent-sales.onrender.com/api/checkout', { productId: prod.id, ...checkoutData });
+      const res = await axios.post('/api/checkout', { productId: prod.id, ...checkoutData });
       setOrderConfirm(res.data);
       setCheckoutMode('confirm');
     } catch (err) {
@@ -519,7 +538,7 @@ export default function App() {
                   
                   try {
                     setIsGraphLoading(true);
-                    const res = await axios.post('https://agri-intelligent-sales.onrender.com/api/climate/risk-matrix', { location: loc });
+                    const res = await axios.post('/api/climate/risk-matrix', { location: loc });
                     setAdvisorResult(res.data);
                   } catch (e) {
                     alert("Hyper-local telemetry lookup failure. Check server or API key.");

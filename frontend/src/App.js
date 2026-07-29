@@ -153,7 +153,7 @@ export default function App() {
     } catch (e) { console.error("Market prices fetch error:", e); }
   };
 
-  // REAL-TIME SEARCH TRIGGER (SYNCS SEARCH TABLE)
+  // 🌟 REAL-TIME SEARCH TRIGGER FOR MARKET PRICES GRID (DYNAMIC SPOT LOOKUP)
   const handleLiveSearchTrigger = (e) => {
     const queryText = e.target.value;
     setFilterCrop(queryText);
@@ -170,20 +170,20 @@ export default function App() {
       const trimmedQuery = queryText.trim();
       if (trimmedQuery.length > 1) {
         try {
-          const res = await fetch('/api/history', {
+          const res = await fetch('/api/marketprice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ crop: trimmedQuery, range: '1Y' })
+            body: JSON.stringify({ crop: trimmedQuery })
           });
           
           const data = await res.json();
-          if (data && data.price) {
+          if (data && data.success) {
             const newLiveRow = {
               crop: data.crop || trimmedQuery,
               price: data.price,
-              mandi: data.mandi || "National Trade Hub",
-              source: data.source || "AGMARKNET Stream",
-              date: data.timestamp || new Date().toLocaleString()
+              mandi: data.mandi || "Global Trade Terminal",
+              source: data.source || "Live Search Pipeline",
+              date: data.date || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
             };
             
             setMarketPrices(prev => [
@@ -192,7 +192,7 @@ export default function App() {
             ]);
           }
         } catch (err) { 
-          console.log("Bypassed search processing:", err); 
+          console.error("Bypassed search processing:", err); 
         } finally {
           setIsSearching(false);
         }
@@ -526,15 +526,15 @@ export default function App() {
           <div className="glass-slab animated-entrance">
             <div className="section-header-row">
               <div>
-                <h2 className="section-title">Live National Agmarknet Valuation Indices</h2>
-                <p className="section-subtitle">Real-time commodity data matrices generated dynamically across all Pan-India mandis.</p>
+                <h2 className="section-title">Live Dynamic Market Valuation Indices</h2>
+                <p className="section-subtitle">Real-time commodity prices fetched live across global and national market exchanges.</p>
               </div>
               <div className="filter-group">
                 <input 
                   type="text" 
-                  placeholder="Type ANY crop (e.g., Tamarind, Lemon, Garlic, Cotton)..." 
+                  placeholder="Type ANY crop in the world (e.g. Vanilla, Cocoa, Saffron)..." 
                   className="glass-input" 
-                  style={{ width: '340px' }}
+                  style={{ width: '360px' }}
                   value={filterCrop} 
                   onChange={handleLiveSearchTrigger}
                 />
@@ -567,7 +567,7 @@ export default function App() {
                   animation: 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                 }}></span>
                 <span>
-                  Querying AGMARKNET, eNAM & State Marketing Boards for <strong>"{filterCrop}"</strong>...
+                  Searching real-time spot market prices for <strong>"{filterCrop}"</strong>...
                 </span>
               </div>
             )}
@@ -613,8 +613,8 @@ export default function App() {
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
                   <p style={{ fontSize: '15px', fontWeight: '500' }}>
                     {filterCrop.trim().length > 0 
-                      ? `No live record found matching "${filterCrop}". Try hitting Enter or checking spelling.` 
-                      : 'No live market prices loaded currently.'}
+                      ? `Type any crop above to calculate real-time spot prices for "${filterCrop}".` 
+                      : 'Type any crop name in the search bar above to fetch live market prices.'}
                   </p>
                 </div>
               )}
@@ -697,7 +697,7 @@ export default function App() {
           </div>
         )}
 
-        {/* PRICE HISTORY SECTION (CLEAN COMPONENT MOUNT) */}
+        {/* PRICE HISTORY SECTION */}
         {activeTab === 'Price History' && (
           <CropHistory />
         )}

@@ -531,7 +531,7 @@ export default function App() {
           </div>
         )}
 
-        {/* MARKET PRICES SECTION */}
+     {/* MARKET PRICES SECTION */}
         {activeTab === 'Market Prices' && (
           <div className="glass-slab animated-entrance">
             <div className="section-header-row">
@@ -595,7 +595,11 @@ export default function App() {
                 </thead>
                 <tbody>
                   {marketPrices
-                    .filter(item => item.crop.toLowerCase().includes(filterCrop.toLowerCase().trim()))
+                    .filter(item => {
+                      const query = filterCrop.toLowerCase().trim();
+                      if (!query) return true; // Show initial baseline grid if input is cleared
+                      return item.crop.toLowerCase().includes(query);
+                    })
                     .map((item, idx) => (
                       <tr key={idx} className="animated-entrance">
                         <td className="bold-text" style={{ textTransform: 'capitalize' }}>{item.crop}</td>
@@ -623,7 +627,7 @@ export default function App() {
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
                   <p style={{ fontSize: '15px', fontWeight: '500' }}>
                     {filterCrop.trim().length > 0 
-                      ? `Type any crop above to calculate real-time spot prices for "${filterCrop}".` 
+                      ? `Calculating live market rates for "${filterCrop}"...` 
                       : 'Type any crop name in the search bar above to fetch live market prices.'}
                   </p>
                 </div>

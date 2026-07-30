@@ -154,21 +154,27 @@ export default function App() {
   };
 
   // 🌟 REAL-TIME SEARCH TRIGGER FOR MARKET PRICES GRID (DYNAMIC SPOT LOOKUP)
+// 🌟 OPTIMIZED LIVE SEARCH TRIGGER (PREVENTS PARTIAL TYPING CLUTTER)
   const handleLiveSearchTrigger = (e) => {
     const queryText = e.target.value;
     setFilterCrop(queryText);
 
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
 
-    if (queryText.trim().length > 1) {
+    // Only set loading indicator if user has typed at least 3 characters
+    if (queryText.trim().length >= 3) {
       setIsSearching(true);
     } else {
       setIsSearching(false);
+      return;
     }
 
+    // Bumped to 650ms to wait until typing completely finishes
     searchDebounceRef.current = setTimeout(async () => {
       const trimmedQuery = queryText.trim();
-      if (trimmedQuery.length > 1) {
+      
+      // Strict length check: Requires minimum 3 characters
+      if (trimmedQuery.length >= 3) {
         try {
           const res = await fetch('/api/marketprice', {
             method: 'POST',
@@ -177,18 +183,22 @@ export default function App() {
           });
           
           const data = await res.json();
-          if (data && data.success) {
+          if (data && data.success && data.crop) {
             const newLiveRow = {
-              crop: data.crop || trimmedQuery,
+              crop: data.crop,
               price: data.price,
               mandi: data.mandi || "Global Trade Terminal",
               source: data.source || "Live Search Pipeline",
               date: data.date || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
             };
             
+            // Cleanly update table state without leaving orphan partial-match fragments
             setMarketPrices(prev => [
               newLiveRow, 
-              ...prev.filter(i => i.crop.toLowerCase() !== (data.crop || trimmedQuery).toLowerCase())
+              ...prev.filter(i => 
+                i.crop.toLowerCase() !== data.crop.toLowerCase() &&
+                i.crop.toLowerCase() !== trimmedQuery.toLowerCase()
+              )
             ]);
           }
         } catch (err) { 
@@ -199,7 +209,7 @@ export default function App() {
       } else {
         setIsSearching(false);
       }
-    }, 300);
+    }, 650);
   };
 
   const fetchListings = async (currentUser = null) => {

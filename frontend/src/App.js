@@ -717,9 +717,10 @@ export default function App() {
         )}
 
         {/* AUTH PORTAL SECTION */}
+       {/* AUTH PORTAL SECTION */}
         {activeTab === 'Auth Portal' && (
-          <div className="glass-slab auth-box animated-entrance">
-            <h2 className="section-title text-center mb-6">
+          <div className="glass-slab auth-box animated-entrance" style={{ padding: '32px 28px', maxWidth: '440px', margin: '0 auto' }}>
+            <h2 className="section-title text-center" style={{ marginBottom: '24px', fontSize: '22px', fontWeight: '800' }}>
               {isSignUp ? "Create Secure Account" : "Identity Authentication Check"}
             </h2>
             
@@ -731,26 +732,28 @@ export default function App() {
                 }
                 await handleAuthSubmit(e);
               }} 
-              className="vertical-form"
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
             >
               {isSignUp && (
                 <div className="input-block">
-                  <label>Full Identification Name</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase' }}>Full Identification Name</label>
                   <input type="text" className="glass-input" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})}/>
                 </div>
               )}
+
               <div className="input-block">
-                <label>Email Address</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase' }}>Email Address</label>
                 <input type="email" className="glass-input" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})}/>
               </div>
+
               <div className="input-block">
-                <label>Password</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase' }}>Password</label>
                 <input type="password" className="glass-input" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})}/>
               </div>
               
               {isSignUp && (
                 <div className="input-block animated-entrance">
-                  <label>Confirm Authorized Password</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase' }}>Confirm Authorized Password</label>
                   <input 
                     type="password" 
                     className="glass-input" 
@@ -762,27 +765,29 @@ export default function App() {
               )}
 
               <div className="input-block">
-                <label>Authorized System Role</label>
-                <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{background:'#0f172a'}}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase' }}>Authorized System Role</label>
+                <select className="glass-input" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})} style={{ background: '#0f172a', width: '100%' }}>
                   <option value="farmer">Farmer (Producer Hub)</option>
                   <option value="merchant">Merchant / Wholesaler</option>
                   {!isSignUp && <option value="admin">Administrator</option>}
                 </select>
               </div>
-              {authError && <p style={{color:'#f87171', fontSize:'12px', fontWeight:600}}>{authError}</p>}
-              <button type="submit" className="form-submit-btn">
+
+              {authError && <p style={{ color: '#f87171', fontSize: '12px', fontWeight: 600, margin: '4px 0' }}>{authError}</p>}
+
+              <button type="submit" className="form-submit-btn" style={{ marginTop: '8px', padding: '12px', fontSize: '15px', fontWeight: '700' }}>
                 {isSignUp ? "Register Master Account" : "Verify Credentials Access"}
               </button>
             </form>
 
-            <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0', color: '#64748b', fontSize: '13px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', margin: '28px 0 20px', color: '#64748b', fontSize: '12px', fontWeight: '600' }}>
               <hr style={{ flex: 1, border: '0', borderTop: '1px solid #334155' }} />
-              <span style={{ padding: '0 10px' }}>OR</span>
+              <span style={{ padding: '0 12px' }}>OR</span>
               <hr style={{ flex: 1, border: '0', borderTop: '1px solid #334155' }} />
             </div>
 
-            <div className="input-block" style={{ marginBottom: '20px' }}>
-              <label style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '6px', display: 'block' }}>Select Role Before Google Sign-In</label>
+            <div className="input-block" style={{ marginBottom: '16px' }}>
+              <label style={{ color: '#94a3b8', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '6px', display: 'block', textTransform: 'uppercase' }}>Select Role Before Google Sign-In</label>
               <select 
                 id="google-role-select"
                 className="glass-input" 
@@ -793,11 +798,11 @@ export default function App() {
               </select>
             </div>
 
-            <div id="google-button-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '10px' }}></div>
+            <div id="google-button-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '20px 0 16px' }}></div>
 
-            <p className="auth-toggle-text" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }} style={{ marginTop: '20px' }}>
+            <p className="auth-toggle-text" onClick={() => { setIsSignUp(!isSignUp); setAuthError(''); }} style={{ marginTop: '24px', textAlign: 'center', cursor: 'pointer', fontSize: '13px' }}>
               {isSignUp ? "Already hold active clearance? " : "Require new profile registration? "} 
-              <span>{isSignUp ? "Login Here" : "Sign Up Here"}</span>
+              <span style={{ color: '#34d399', fontWeight: '700' }}>{isSignUp ? "Login Here" : "Sign Up Here"}</span>
             </p>
           </div>
         )}

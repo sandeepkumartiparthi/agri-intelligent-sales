@@ -276,11 +276,13 @@ body {
   font-size: 14px;
   outline: none;
   width: 100%;
-  transition: border-color 0.2s ease;
+  box-sizing: border-box; /* Ensures padding doesn't overflow width */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .glass-input:focus {
   border-color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 
 .table-container {
@@ -406,15 +408,16 @@ body {
 .input-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
 .input-block label {
+  display: block;
   font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
-  color: #64748b;
   letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 6px; /* Pushes inputs down from label text */
+  text-transform: uppercase;
 }
 
 .form-row-2 {
@@ -434,10 +437,13 @@ body {
   cursor: pointer;
   margin-top: 8px;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-submit-btn:hover {
   transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
 }
 
 .vertical-list {
@@ -650,6 +656,12 @@ body {
 .auth-box {
   max-width: 440px;
   margin: 50px auto;
+  padding: 32px 28px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
 .auth-toggle-text {
@@ -663,7 +675,7 @@ body {
 .auth-toggle-text span {
   color: #34d399;
   font-weight: 700;
-}
+}}
 
 /* Admin Dashboard Subsets Layout Map */
 .admin-summary-grid {
@@ -845,4 +857,11 @@ body {
 .risk-card.stable .risk-badge { 
   color: #6ee7b7; 
   border: 1px solid #6ee7b7; 
+}
+
+#google-button-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 18px 0 12px; /* Gives top/bottom clearance around Google button */
 }

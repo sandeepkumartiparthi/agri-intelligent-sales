@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Send, X} from 'lucide-react';
+import { Bot, Send, X } from 'lucide-react';
 
 export default function AIAgent({ marketData = [], advisorResult = {} }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,8 +37,22 @@ export default function AIAgent({ marketData = [], advisorResult = {} }) {
     setInput('');
     setIsTyping(true);
 
+    // Helper function declared OUTSIDE the streaming loop to satisfy ESLint
+    const updateLastAiMessage = (textChunk) => {
+      setMessages(prev => {
+        const updated = [...prev];
+        if (updated.length > 0) {
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            text: textChunk
+          };
+        }
+        return updated;
+      });
+    };
+
     try {
-      const response = await fetch('https://agri-intelligent-sales.onrender.com/api/ai-chat', {
+      const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: trimmedInput, data: marketData, advisor: advisorResult })
@@ -68,16 +82,7 @@ export default function AIAgent({ marketData = [], advisorResult = {} }) {
         aiReply += decoder.decode(value, { stream: true });
 
         if (isMountedRef.current) {
-          setMessages(prev => {
-            const updated = [...prev];
-            if (updated.length > 0) {
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                text: aiReply
-              };
-            }
-            return updated;
-          });
+          updateLastAiMessage(aiReply);
         }
       }
     } catch (error) {

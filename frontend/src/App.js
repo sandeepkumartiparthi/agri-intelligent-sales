@@ -209,12 +209,10 @@ export default function App() {
       }
     }, 650);
   };
-
-  // --- 🚀 INSTANT & UNBLOCKED LISTINGS FETCHING ---
-
+// --- 🚀 INSTANT & UNBLOCKED CROP LISTINGS FETCHING ---
 const fetchListings = async () => {
   try {
-    // 🌟 Fetches immediately on mount without waiting for tokens or auth state
+    // 🌟 Fetches instantly on mount without waiting for tokens or auth state
     const response = await axios.get('/api/listings');
     setListings(Array.isArray(response.data) ? response.data : []);
   } catch (error) {
@@ -253,24 +251,7 @@ useEffect(() => {
   loadMarketplace();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []); = async (currentUser = null) => {
-    const token = localStorage.getItem('irsa_session_token');
-    
-    if (!token && !currentUser) {
-      setListings([]);
-      return;
-    }
-
-    try {
-      const response = await axios.get('/api/listings', {
-        headers: getSecurityHeaders()
-      });
-      setListings(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
-      console.error("Failed to fetch listings:", error);
-      setListings([]);
-    }
-  };
+}, []);
 
   const fetchAdminUsers = async () => {
     try {
@@ -329,22 +310,23 @@ useEffect(() => {
     reader.readAsDataURL(file);
   };
 
-  const handleFarmerSubmit = async (e) => {
+const handleFarmerSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
     try {
+      const payload = { ...farmerForm, farmerId: user.id, farmerName: user.name };
       const res = await fetch('/api/listings', {
         method: 'POST',
         headers: getSecurityHeaders('application/json'),
-        body: JSON.stringify({ ...farmerForm, farmerId: user.id, farmerName: user.name })
+        body: JSON.stringify(payload)
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.item) {
         setFarmerForm({ cropName: '', quantity: '', locationText: '', mapLink: '', imageStream: '' });
-        fetchListings(user);
+        setListings(prev => [data.item, ...prev]);
         alert("Listing batch committed to database nodes successfully.");
       } else {
-        const errPayload = await res.json();
-        alert(`Action Failed: ${errPayload.message || 'Unauthorized package modification entry.'}`);
+        alert(`Action Failed: ${data.message || 'Unauthorized package modification entry.'}`);
       }
     } catch (err) { console.error(err); }
   };
@@ -353,6 +335,8 @@ useEffect(() => {
     if (!window.confirm("Confirm listing removal from cloud nodes?")) return;
     
     const activeUser = JSON.parse(localStorage.getItem('irsa_user_profile') || '{}');
+    setListings(prev => prev.filter(item => item._id !== id));
+    if (selectedListing && selectedListing._id === id) setSelectedListing(null);
 
     try {
       const res = await fetch(`/api/listings/${id}`, { 
@@ -364,14 +348,13 @@ useEffect(() => {
         }
       });
 
-      if (res.ok) { 
-        fetchListings(activeUser);
-        if (selectedListing && selectedListing._id === id) setSelectedListing(null); 
-      } else {
+      if (!res.ok) {
+        fetchListings();
         const errPayload = await res.json();
         alert(`Action Restricted: ${errPayload.message}`);
       }
     } catch (e) {
+      fetchListings();
       console.error("Delete Error:", e);
     }
   };
@@ -689,7 +672,7 @@ useEffect(() => {
           </div>
         )}
 
-        {/* CROP LISTINGS SECTION */}
+{/* CROP LISTINGS SECTION */}
 {activeTab === 'Listings' && (
   <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
     <div style={{ marginBottom: '30px' }}>
@@ -731,7 +714,7 @@ useEffect(() => {
               padding: '24px',
               display: 'flex',
               flexDirection: 'column',
-              justify: 'space-between',
+              justifyContent: 'space-between', // ✅ FIXED HERE
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
               position: 'relative',
@@ -760,7 +743,6 @@ useEffect(() => {
 
             {/* Clickable Card Body */}
             <div onClick={() => setSelectedListing(item)} style={{ cursor: 'pointer' }}>
-              {/* Optional Crop Image Preview */}
               {item.imageStream && (
                 <div style={{ width: '100%', height: '140px', borderRadius: '10px', overflow: 'hidden', marginBottom: '16px' }}>
                   <img src={item.imageStream} alt={item.cropName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

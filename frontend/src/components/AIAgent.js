@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, Send, X, MessageSquare } from 'lucide-react';
+import { Bot, Send, X} from 'lucide-react';
 
 export default function AIAgent({ marketData = [], advisorResult = {} }) {
   const [isOpen, setIsOpen] = useState(false);

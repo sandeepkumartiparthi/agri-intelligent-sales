@@ -210,7 +210,50 @@ export default function App() {
     }, 650);
   };
 
-  const fetchListings = async (currentUser = null) => {
+  // --- 🚀 INSTANT & UNBLOCKED LISTINGS FETCHING ---
+
+const fetchListings = async () => {
+  try {
+    // 🌟 Fetches immediately on mount without waiting for tokens or auth state
+    const response = await axios.get('/api/listings');
+    setListings(Array.isArray(response.data) ? response.data : []);
+  } catch (error) {
+    console.error("Failed to fetch listings:", error);
+    setListings([]);
+  }
+};
+
+useEffect(() => {
+  // 1. Fetch listings instantly on app launch
+  fetchListings();
+
+  // 2. Restore local user profile session if present
+  const activeProfile = localStorage.getItem('irsa_user_profile');
+  if (activeProfile) {
+    try {
+      const currentUser = JSON.parse(activeProfile);
+      setUser(currentUser);
+    } catch (err) {
+      localStorage.clear();
+    }
+  }
+
+  // 3. Load dynamic market prices & fertilizer store
+  fetchMarketPrices();
+
+  const loadMarketplace = async () => {
+    try {
+      const res = await axios.get('/api/marketplace');
+      setFertilizers(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Marketplace loaded with fallback:", err);
+      setFertilizers([]);
+    }
+  };
+  loadMarketplace();
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); = async (currentUser = null) => {
     const token = localStorage.getItem('irsa_session_token');
     
     if (!token && !currentUser) {
@@ -647,46 +690,164 @@ export default function App() {
         )}
 
         {/* CROP LISTINGS SECTION */}
-        {activeTab === 'Listings' && (
-          <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
-            <h2 className="section-title">Regional Crop Market Listings</h2>
-            <div className="listings-grid">
-              {listings.length > 0 ? (
-                listings.map((item) => (
-                  <div key={item._id} className="listing-card">
-                    <div onClick={() => setSelectedListing(item)} style={{cursor: 'pointer'}}>
-                      <h3>{item.cropName}</h3>
-                      <p><strong>Quantity:</strong> {item.quantity} Quintals</p>
-                      <p><strong>Farmer:</strong> {item.farmerName}</p>
-                      <small>Posted: {item.date}</small>
-                    </div>
+{activeTab === 'Listings' && (
+  <div className="glass-slab animated-entrance" style={{ padding: '40px' }}>
+    <div style={{ marginBottom: '30px' }}>
+      <h2 
+        className="section-title" 
+        style={{ 
+          fontSize: '28px', 
+          fontWeight: '800', 
+          background: 'linear-gradient(to right, #34d399, #38bdf8)', 
+          WebkitBackgroundClip: 'text', 
+          WebkitTextFillColor: 'transparent',
+          marginBottom: '6px'
+        }}
+      >
+        Regional Crop Market Listings
+      </h2>
+      <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+        Active harvest batches submitted across regional production hubs.
+      </p>
+    </div>
 
-                    {(user?.role === 'admin' || user?.id === item.farmerId) && (
-                      <button 
-                        onClick={() => deleteListing(item._id)} 
-                        className="delete-btn"
-                        style={{
-                          marginTop: '15px', 
-                          background: '#ef4444', 
-                          border: 'none', 
-                          padding: '8px', 
-                          borderRadius: '6px', 
-                          color: 'white', 
-                          cursor: 'pointer',
-                          width: '100%'
-                        }}
-                      >
-                        Delete / Mark as Sold
-                      </button>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p>No crop listings available at the moment.</p>
+    {listings.length > 0 ? (
+      <div 
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+          gap: '24px' 
+        }}
+      >
+        {listings.map((item) => (
+          <div 
+            key={item._id} 
+            className="animated-entrance"
+            style={{
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '16px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              justify: 'space-between',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-6px)';
+              e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+              e.currentTarget.style.boxShadow = '0 12px 30px rgba(52, 211, 153, 0.18)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)';
+            }}
+          >
+            {/* Top Gradient Accent Line */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '3px',
+              background: 'linear-gradient(90deg, #34d399, #06b6d4)'
+            }} />
+
+            {/* Clickable Card Body */}
+            <div onClick={() => setSelectedListing(item)} style={{ cursor: 'pointer' }}>
+              {/* Optional Crop Image Preview */}
+              {item.imageStream && (
+                <div style={{ width: '100%', height: '140px', borderRadius: '10px', overflow: 'hidden', marginBottom: '16px' }}>
+                  <img src={item.imageStream} alt={item.cropName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
               )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', textTransform: 'capitalize', margin: 0 }}>
+                  {item.cropName}
+                </h3>
+                <span style={{ 
+                  background: 'rgba(52, 211, 153, 0.12)', 
+                  color: '#34d399', 
+                  border: '1px solid rgba(52, 211, 153, 0.25)',
+                  padding: '4px 12px', 
+                  borderRadius: '20px', 
+                  fontSize: '12px', 
+                  fontWeight: '700',
+                  letterSpacing: '0.5px'
+                }}>
+                  {item.quantity} Qtl
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', fontSize: '13px', color: '#cbd5e1' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#94a3b8' }}>Producer:</span>
+                  <strong style={{ color: '#f8fafc' }}>{item.farmerName || 'Registered Farmer'}</strong>
+                </div>
+                {item.locationText && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}>
+                    <MapPin size={14} />
+                    <span>{item.locationText}</span>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ fontSize: '11px', color: '#64748b', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '12px' }}>
+                Posted on {item.date}
+              </div>
             </div>
+
+            {/* Action Delete Button */}
+            {(user?.role === 'admin' || user?.id === item.farmerId) && (
+              <button 
+                onClick={() => deleteListing(item._id)} 
+                style={{
+                  marginTop: '18px',
+                  width: '100%',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  color: '#f87171',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#ef4444';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                  e.currentTarget.style.color = '#f87171';
+                }}
+              >
+                <Trash2 size={14} /> Delete / Mark as Sold
+              </button>
+            )}
           </div>
-        )}
+        ))}
+      </div>
+    ) : (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <ShoppingBag size={48} style={{ color: '#475569', marginBottom: '12px' }} />
+        <h3 style={{ fontSize: '18px', color: '#f8fafc', marginBottom: '6px' }}>No Active Crop Listings</h3>
+        <p style={{ fontSize: '14px' }}>Crop batches published by farmers will appear here automatically.</p>
+      </div>
+    )}
+  </div>
+)}
 
         {/* HELP SECTION */}
         {activeTab === 'Help' && (

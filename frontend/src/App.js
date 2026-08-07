@@ -302,42 +302,98 @@ useEffect(() => {
     }
   };
 
-  const handleImageConversion = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => { setFarmerForm({ ...farmerForm, imageStream: reader.result }); };
-    reader.readAsDataURL(file);
-  };
+// ⚡ 1. ULTRA-FAST IMAGE COMPRESSION (~40KB JPEG MAX)
+const handleImageConversion = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-const handleFarmerSubmit = async (e) => {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 450; // Optimized resolution for card grids
+      const scale = MAX_WIDTH / img.width;
+
+      canvas.width = (img.width > MAX_WIDTH) ? MAX_WIDTH : img.width;
+      canvas.height = (img.width > MAX_WIDTH) ? (img.height * scale) : img.height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Compress to 50% JPEG quality (~35-50KB instead of 5MB raw phone photo)
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+      setFarmerForm(prev => ({ ...prev, imageStream: compressedBase64 }));
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+// ⚡ 0ms INSTANT PUBLISH (OPTIMISTIC UI UPDATE)
+  const handleFarmerSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
+
+    // 1. Generate temporary ID & card payload for instant render
+    const tempId = `temp_${Date.now()}`;
+    const optimisticItem = {
+      _id: tempId,
+      farmerId: user.id,
+      farmerName: user.name,
+      cropName: farmerForm.cropName,
+      quantity: farmerForm.quantity,
+      locationText: farmerForm.locationText,
+      mapLink: farmerForm.mapLink,
+      imageStream: farmerForm.imageStream,
+      date: 'Just now'
+    };
+
+    // 2. Display on screen INSTANTLY (0ms latency)
+    setListings(prev => [optimisticItem, ...prev]);
+
+    // 3. Clear input form instantly
+    const currentFormState = { ...farmerForm };
+    setFarmerForm({ cropName: '', quantity: '', locationText: '', mapLink: '', imageStream: '' });
+
+    // 4. Persist to MongoDB in background
     try {
-      const payload = { ...farmerForm, farmerId: user.id, farmerName: user.name };
+      const payload = { ...currentFormState, farmerId: user.id, farmerName: user.name };
       const res = await fetch('/api/listings', {
         method: 'POST',
         headers: getSecurityHeaders('application/json'),
         body: JSON.stringify(payload)
       });
+
       const data = await res.json();
+
       if (res.ok && data.item) {
-        setFarmerForm({ cropName: '', quantity: '', locationText: '', mapLink: '', imageStream: '' });
-        setListings(prev => [data.item, ...prev]);
-        alert("Listing batch committed to database nodes successfully.");
+        // Replace temporary local card with database-verified document
+        setListings(prev => prev.map(item => item._id === tempId ? data.item : item));
       } else {
-        alert(`Action Failed: ${data.message || 'Unauthorized package modification entry.'}`);
+        // Revert card if server rejects listing
+        setListings(prev => prev.filter(item => item._id !== tempId));
+        alert(`Publish Failed: ${data.message || 'Unauthorized package modification entry.'}`);
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      // Revert card on network error
+      setListings(prev => prev.filter(item => item._id !== tempId));
+      console.error("Submit Error:", err);
+      alert("Network error: Failed to sync crop to cloud.");
+    }
   };
 
+  // ⚡ 0ms INSTANT DELETE (OPTIMISTIC UI REMOVAL)
   const deleteListing = async (id) => {
     if (!window.confirm("Confirm listing removal from cloud nodes?")) return;
     
     const activeUser = JSON.parse(localStorage.getItem('irsa_user_profile') || '{}');
+
+    // 1. Remove from screen INSTANTLY
     setListings(prev => prev.filter(item => item._id !== id));
     if (selectedListing && selectedListing._id === id) setSelectedListing(null);
 
+    // 2. Delete from database in background
     try {
       const res = await fetch(`/api/listings/${id}`, { 
         method: 'DELETE',
@@ -349,11 +405,13 @@ const handleFarmerSubmit = async (e) => {
       });
 
       if (!res.ok) {
+        // Re-fetch from database if delete was denied by server rules
         fetchListings();
         const errPayload = await res.json();
         alert(`Action Restricted: ${errPayload.message}`);
       }
     } catch (e) {
+      // Rollback UI on network error
       fetchListings();
       console.error("Delete Error:", e);
     }

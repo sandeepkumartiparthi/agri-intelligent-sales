@@ -93,13 +93,11 @@ export default function App() {
     };
     loadMarketplace();
   }, []);
-
   useEffect(() => {
     if (user && user.role === 'admin') {
       fetchAdminUsers();
     }
   }, [user]);
-
   // NATIVE GOOGLE POPUP RENDERING EFFECT
   useEffect(() => {
     /* global google */

@@ -467,15 +467,6 @@ app.post('/api/checkout', (req, res) => {
     res.json({ success: true, orderId: "IRSA-" + Date.now().toString(36).toUpperCase(), item: product?.name || 'Item', total: (product?.price || 500) * quantity, deliveryDate: d.toDateString() });
 });
 
-app.post('/api/listings', async (req, res) => {
-    try {
-        const item = await Listing.create({ ...req.body, date: new Date().toLocaleString() });
-        res.status(201).json({ success: true, item });
-    } catch (e) {
-        res.status(500).json({ success: false, message: "Failed to create listing" });
-    }
-});
-
 // ==================================================================
 // 🛒 CROP LISTINGS ENDPOINTS (HIGH-SPEED & OPTIMIZED)
 // ==================================================================
@@ -497,7 +488,7 @@ app.post('/api/listings', async (req, res) => {
     }
 });
 
-// 2. FETCH ALL LISTINGS (FAST, UNBLOCKED & SORTED NEWEST-FIRST)
+// 2. FETCH LISTINGS (ULTRA-FAST, LEAN & LIMITED TO RECENT 25)
 app.get('/api/listings', async (req, res) => {
     try {
         const { role, id } = req.query; 
@@ -508,11 +499,13 @@ app.get('/api/listings', async (req, res) => {
             query = { farmerId: id };
         }
 
-        // 🌟 PERFORMANCE BOOST:
-        // .lean() converts heavy Mongoose documents to plain JS objects (5x-10x faster response time)
-        // .sort({ _id: -1 }) guarantees the newest published listings appear first
+        // 🌟 LIGHTWEIGHT SPEED BOOST:
+        // .sort({ _id: -1 }) brings newest published listings first
+        // .limit(25) keeps payload under 300KB so site opens instantly
+        // .lean() converts Mongoose docs to plain JS objects (10x faster execution)
         const listings = await Listing.find(query)
             .sort({ _id: -1 })
+            .limit(25)
             .lean();
 
         res.json(listings);

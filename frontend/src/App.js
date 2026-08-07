@@ -139,8 +139,8 @@ export default function App() {
       if (wrapper) {
         google.accounts.id.renderButton(
           wrapper,
-          { theme: "filled_black", size: "large", shape: "rectangular", width: "100%" }
-        );
+        { theme: "filled_black", size: "large", shape: "rectangular", width: 320 }
+);
       }
     }
   }, [activeTab]);
@@ -459,8 +459,8 @@ export default function App() {
           </div>
         )}
 
-        {/* AGRO-CLIMATE RISK */}
-      {activeTab === 'Agro-Climate Risk' && (
+{/* AGRO-CLIMATE RISK */}
+{activeTab === 'Agro-Climate Risk' && (
   <div className="glass-slab animated-entrance" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
     <h2 className="section-title text-center" style={{ color: '#fff', marginBottom: '10px' }}>Agro-Climate Risk Matrix</h2>
     <p className="section-subtitle text-center" style={{ color: '#94a3b8', marginBottom: '30px' }}>Real-time telemetric 72-hour spoilage and stress assessment for your district cargo.</p>
@@ -483,7 +483,6 @@ export default function App() {
             const res = await axios.post('/api/climate/risk-matrix', { location: loc });
             setAdvisorResult(res.data);
           } catch (e) {
-            // Displays the exact error message sent back from your backend
             const errorMsg = e.response?.data?.message || "Hyper-local telemetry lookup failure. Check server or API key.";
             alert(errorMsg);
           } finally {
@@ -501,15 +500,27 @@ export default function App() {
       <div className="risk-grid animated-entrance" style={{ display: 'grid', gap: '20px' }}>
         <div className={`risk-card ${advisorResult.riskLevel?.toLowerCase() || 'stable'}`} style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="risk-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>Telemetry Survey for {advisorResult.location || 'Selected Coordinates'}</h3>
+            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>
+              Telemetry Survey for {advisorResult.location || 'Selected Coordinates'}
+            </h3>
             <span className="risk-badge" style={{ padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '12px', background: 'rgba(0,0,0,0.3)', color: '#fff', letterSpacing: '0.5px' }}>
               {advisorResult.riskLevel} (Score: {advisorResult.score}/100)
             </span>
           </div>
           
           <div className="stats-row" style={{ display: 'flex', gap: '30px', margin: '20px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
-            <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Micro-climate Temperature</small><p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>{advisorResult.temp}°C</p></div>
-            <div><small style={{ color: '#94a3b8', fontSize: '12px' }}>Ambient Air Humidity</small><p style={{ color: '#fff', fontSize: '24px', fontWeight 800, marginTop: '4px' }}>{advisorResult.humidity}%</p></div>
+            <div>
+              <small style={{ color: '#94a3b8', fontSize: '12px' }}>Micro-climate Temperature</small>
+              <p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>
+                {advisorResult.temp}°C
+              </p>
+            </div>
+            <div>
+              <small style={{ color: '#94a3b8', fontSize: '12px' }}>Ambient Air Humidity</small>
+              <p style={{ color: '#fff', fontSize: '24px', fontWeight: 800, marginTop: '4px' }}>
+                {advisorResult.humidity}%
+              </p>
+            </div>
           </div>
           
           <p className="risk-advice" style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.5', marginTop: '15px', fontWeight: 600 }}>

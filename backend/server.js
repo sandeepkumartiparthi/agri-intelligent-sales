@@ -211,11 +211,11 @@ app.get('/api/market-prices', async (req, res) => {
     res.json(Array.from(DYNAMIC_COMMODITY_CACHE.values()));
 });
 
-// --- ⛅ HYPER-LOCAL WEATHER TELEMETRY ---
+// --- ⛅ HYPER-LOCAL WEATHER TELEMETRY (GEOCODED & FIXED) ---
 app.post('/api/climate/risk-matrix', async (req, res) => {
     const { location } = req.body;
     
-    // Fallback across common API key environment variable names
+    // Check across common environment variable key names in Render
     const apiKey = process.env.OPENWEATHER_KEY || process.env.OPENWEATHER_API_KEY || process.env.WEATHER_API_KEY;
 
     if (!location || !location.trim()) {
@@ -227,19 +227,40 @@ app.post('/api/climate/risk-matrix', async (req, res) => {
         return res.status(500).json({ success: false, message: "Server misconfiguration: API key missing." });
     }
 
-    // Append default country code if user submits a standalone city (prevents 404 lookup failures)
-    let queryLocation = location.trim();
-    if (!queryLocation.includes(',')) {
-        queryLocation = `${queryLocation},IN`;
-    }
+    const cleanLocation = location.trim();
 
     try {
-        const weatherAPI = await axios.get(
-            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(queryLocation)}&units=metric&appid=${apiKey}`
-        );
+        let lat, lon, resolvedName;
+
+        // Step 1: Use OpenWeather Geocoding API to resolve coordinates for regional/district names
+        try {
+            const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cleanLocation)}&limit=1&appid=${apiKey}`;
+            const geoRes = await axios.get(geoUrl);
+
+            if (geoRes.data && geoRes.data.length > 0) {
+                lat = geoRes.data[0].lat;
+                lon = geoRes.data[0].lon;
+                resolvedName = `${geoRes.data[0].name}${geoRes.data[0].state ? `, ${geoRes.data[0].state}` : ''}`;
+            }
+        } catch (geoErr) {
+            console.warn("Geocoding lookup bypassed, falling back to direct query search.");
+        }
+
+        // Step 2: Fetch weather using Lat/Lon coordinates if resolved, or direct query string fallback
+        let queryLocation = cleanLocation;
+        if (!queryLocation.includes(',')) {
+            queryLocation = `${queryLocation},IN`;
+        }
+
+        const weatherUrl = (lat !== undefined && lon !== undefined)
+            ? `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
+            : `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(queryLocation)}&units=metric&appid=${apiKey}`;
+
+        const weatherAPI = await axios.get(weatherUrl);
 
         const temp = weatherAPI.data.main.temp;
         const humidity = weatherAPI.data.main.humidity;
+        const cityName = resolvedName || weatherAPI.data.name;
         
         let riskLevel = 'stable';
         let riskScore = 20;
@@ -255,26 +276,26 @@ app.post('/api/climate/risk-matrix', async (req, res) => {
             recommendation = 'Monitor closely. Elevated ambient heat and moisture detected.';
         }
         
-        res.json({ 
+        return res.json({ 
             success: true, 
             temp, 
             humidity, 
             score: riskScore,
             riskLevel: riskLevel,
-            location: weatherAPI.data.name,
+            location: cityName,
             recommendation: recommendation,
             message: riskLevel !== 'stable' 
-                ? `⚠️ Regional Agro-Climate Alert: Spoilage risks flagged for ${weatherAPI.data.name}. Review storage telemetry.` 
-                : `✅ Climate conditions at ${weatherAPI.data.name} within safe parameters.`
+                ? `⚠️ Regional Agro-Climate Alert: Spoilage risks flagged for ${cityName}. Review storage telemetry.` 
+                : `✅ Climate conditions at ${cityName} within safe parameters.`
         });
     } catch (e) {
-        // Log detailed API response error to Render terminal logs for debugging
+        // Detailed error logging in Render console
         console.error("OpenWeather API Error Details:", e.response?.data || e.message);
 
-        const apiMessage = e.response?.data?.message || "Hyper-local telemetry lookup failure.";
-        res.status(e.response?.status || 500).json({ 
+        const apiMessage = e.response?.data?.message || "Location telemetry lookup failed.";
+        return res.status(e.response?.status || 500).json({ 
             success: false, 
-            message: `Telemetry lookup failed: ${apiMessage}. Check city spelling or allow up to 2 hours for newly generated keys to activate.`
+            message: `Telemetry lookup failed: ${apiMessage}. Check spelling or add state details (e.g., "${cleanLocation}, AP").`
         });
     }
 });

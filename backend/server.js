@@ -214,10 +214,30 @@ app.get('/api/market-prices', async (req, res) => {
 // --- ⛅ HYPER-LOCAL WEATHER TELEMETRY ---
 app.post('/api/climate/risk-matrix', async (req, res) => {
     const { location } = req.body;
-    const apiKey = process.env.OPENWEATHER_KEY;
     
+    // Fallback across common API key environment variable names
+    const apiKey = process.env.OPENWEATHER_KEY || process.env.OPENWEATHER_API_KEY || process.env.WEATHER_API_KEY;
+
+    if (!location || !location.trim()) {
+        return res.status(400).json({ success: false, message: "Location parameter is required." });
+    }
+
+    if (!apiKey) {
+        console.error("❌ OpenWeather API key missing from environment variables!");
+        return res.status(500).json({ success: false, message: "Server misconfiguration: API key missing." });
+    }
+
+    // Append default country code if user submits a standalone city (prevents 404 lookup failures)
+    let queryLocation = location.trim();
+    if (!queryLocation.includes(',')) {
+        queryLocation = `${queryLocation},IN`;
+    }
+
     try {
-        const weatherAPI = await axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&units=metric&appid=${apiKey}`);
+        const weatherAPI = await axios.get(
+            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(queryLocation)}&units=metric&appid=${apiKey}`
+        );
+
         const temp = weatherAPI.data.main.temp;
         const humidity = weatherAPI.data.main.humidity;
         
@@ -248,10 +268,16 @@ app.post('/api/climate/risk-matrix', async (req, res) => {
                 : `✅ Climate conditions at ${weatherAPI.data.name} within safe parameters.`
         });
     } catch (e) {
-        res.status(500).json({ success: false, message: "Hyper-local telemetry lookup failure. Check city spelling or allow up to 20 mins for key activation." });
+        // Log detailed API response error to Render terminal logs for debugging
+        console.error("OpenWeather API Error Details:", e.response?.data || e.message);
+
+        const apiMessage = e.response?.data?.message || "Hyper-local telemetry lookup failure.";
+        res.status(e.response?.status || 500).json({ 
+            success: false, 
+            message: `Telemetry lookup failed: ${apiMessage}. Check city spelling or allow up to 2 hours for newly generated keys to activate.`
+        });
     }
 });
-
 // --- 🔑 GOOGLE & NATIVE AUTHENTICATION ---
 app.post('/api/auth/google-verify', async (req, res) => {
     const { credential, role } = req.body;

@@ -476,36 +476,72 @@ app.post('/api/listings', async (req, res) => {
     }
 });
 
-app.get('/api/listings', async (req, res) => {
+// ==================================================================
+// 🛒 CROP LISTINGS ENDPOINTS (HIGH-SPEED & OPTIMIZED)
+// ==================================================================
+
+// 1. CREATE / PUBLISH A NEW CROP BATCH LISTING
+app.post('/api/listings', async (req, res) => {
     try {
-        const { role, id } = req.query; 
-        if (role === 'admin' || role === 'merchant') {
-            res.json(await Listing.find());
-        } else if (role === 'farmer') {
-            res.json(await Listing.find({ farmerId: id }));
-        } else {
-            res.json(await Listing.find());
-        }
+        const item = await Listing.create({ 
+            ...req.body, 
+            date: new Date().toLocaleString('en-IN', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            }) 
+        });
+        res.status(201).json({ success: true, item });
     } catch (e) {
-        res.status(500).json({ success: false, message: "Failed to fetch listings" });
+        console.error("Create listing error:", e);
+        res.status(500).json({ success: false, message: "Failed to create listing" });
     }
 });
 
+// 2. FETCH ALL LISTINGS (FAST, UNBLOCKED & SORTED NEWEST-FIRST)
+app.get('/api/listings', async (req, res) => {
+    try {
+        const { role, id } = req.query; 
+        let query = {};
+        
+        // Filter specifically for farmer workspace tab if requested
+        if (role === 'farmer' && id) {
+            query = { farmerId: id };
+        }
+
+        // 🌟 PERFORMANCE BOOST:
+        // .lean() converts heavy Mongoose documents to plain JS objects (5x-10x faster response time)
+        // .sort({ _id: -1 }) guarantees the newest published listings appear first
+        const listings = await Listing.find(query)
+            .sort({ _id: -1 })
+            .lean();
+
+        res.json(listings);
+    } catch (e) {
+        console.error("Fetch listings error:", e);
+        res.status(500).json({ success: false, message: "Failed to fetch listings from database" });
+    }
+});
+
+// 3. DELETE / MARK AS SOLD LISTING WITH AUTHORIZATION CHECK
 app.delete('/api/listings/:id', async (req, res) => {
     try {
-        const listing = await Listing.findById(req.params.id);
-        if (!listing) return res.status(404).json({ message: "Listing not found" });
+        const listing = await Listing.findById(req.params.id).lean();
+        if (!listing) {
+            return res.status(404).json({ success: false, message: "Listing not found" });
+        }
 
         const userRole = req.headers['x-user-role'];
         const userId = req.headers['x-user-id'];
 
+        // Only allow admins or the original farmer who created the listing to delete it
         if (userRole === 'admin' || listing.farmerId === userId) {
             await Listing.findByIdAndDelete(req.params.id);
-            return res.json({ success: true });
+            return res.json({ success: true, message: "Listing removed successfully" });
         } else {
-            return res.status(403).json({ message: "Access Denied: Unauthorized deletion." });
+            return res.status(403).json({ success: false, message: "Access Denied: Unauthorized deletion." });
         }
     } catch (e) {
+        console.error("Delete listing error:", e);
         res.status(500).json({ success: false, message: "Server error during deletion" });
     }
 });

@@ -211,11 +211,9 @@ app.get('/api/market-prices', async (req, res) => {
     res.json(Array.from(DYNAMIC_COMMODITY_CACHE.values()));
 });
 
-// --- ⛅ HYPER-LOCAL WEATHER TELEMETRY (GEOCODED & FIXED) ---
+// --- ⛅ HYPER-LOCAL WEATHER & FORECAST (ALL VILLAGES & HAMLETS) ---
 app.post('/api/climate/risk-matrix', async (req, res) => {
     const { location } = req.body;
-    
-    // Check across common environment variable key names in Render
     const apiKey = process.env.OPENWEATHER_KEY || process.env.OPENWEATHER_API_KEY || process.env.WEATHER_API_KEY;
 
     if (!location || !location.trim()) {
@@ -223,45 +221,96 @@ app.post('/api/climate/risk-matrix', async (req, res) => {
     }
 
     if (!apiKey) {
-        console.error("❌ OpenWeather API key missing from environment variables!");
         return res.status(500).json({ success: false, message: "Server misconfiguration: API key missing." });
     }
 
     const cleanLocation = location.trim();
+    let lat, lon, displayName;
 
     try {
-        let lat, lon, resolvedName;
-
-        // Step 1: Use OpenWeather Geocoding API to resolve coordinates for regional/district names
-        try {
-            const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cleanLocation)}&limit=1&appid=${apiKey}`;
-            const geoRes = await axios.get(geoUrl);
-
-            if (geoRes.data && geoRes.data.length > 0) {
-                lat = geoRes.data[0].lat;
-                lon = geoRes.data[0].lon;
-                resolvedName = `${geoRes.data[0].name}${geoRes.data[0].state ? `, ${geoRes.data[0].state}` : ''}`;
+        // TIER 1: 6-DIGIT INDIAN PIN CODE LOOKUP (e.g., 534101)
+        if (/^\d{6}$/.test(cleanLocation)) {
+            try {
+                const zipRes = await axios.get(`https://api.openweathermap.org/geo/1.0/zip?zip=${cleanLocation},IN&appid=${apiKey}`);
+                if (zipRes.data) {
+                    lat = zipRes.data.lat;
+                    lon = zipRes.data.lon;
+                    displayName = `${zipRes.data.name} (PIN: ${cleanLocation})`;
+                }
+            } catch (zipErr) {
+                console.warn(`PIN code geocoding bypassed for: ${cleanLocation}`);
             }
-        } catch (geoErr) {
-            console.warn("Geocoding lookup bypassed, falling back to direct query search.");
         }
 
-        // Step 2: Fetch weather using Lat/Lon coordinates if resolved, or direct query string fallback
-        let queryLocation = cleanLocation;
-        if (!queryLocation.includes(',')) {
-            queryLocation = `${queryLocation},IN`;
+        // TIER 2: OPENSTREETMAP (NOMINATIM - LOCATES ANY INDIAN VILLAGE & MANDAL)
+        if (lat === undefined || lon === undefined) {
+            try {
+                const query = cleanLocation.toLowerCase().includes('india') ? cleanLocation : `${cleanLocation}, India`;
+                const osmRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`, {
+                    headers: { 'User-Agent': 'IRSAAgriApp/1.0' },
+                    timeout: 3500
+                });
+
+                if (osmRes.data && osmRes.data.length > 0) {
+                    lat = osmRes.data[0].lat;
+                    lon = osmRes.data[0].lon;
+                    displayName = osmRes.data[0].name;
+                }
+            } catch (osmErr) {
+                console.warn(`OSM geocoding bypassed for: ${cleanLocation}`);
+            }
         }
 
+        // TIER 3: OPENWEATHER DIRECT GEOCODING FALLBACK
+        if (lat === undefined || lon === undefined) {
+            try {
+                const geoRes = await axios.get(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cleanLocation)},IN&limit=1&appid=${apiKey}`);
+                if (geoRes.data && geoRes.data.length > 0) {
+                    lat = geoRes.data[0].lat;
+                    lon = geoRes.data[0].lon;
+                    displayName = geoRes.data[0].name;
+                }
+            } catch (geoErr) {
+                console.warn(`Direct geocoding bypassed for: ${cleanLocation}`);
+            }
+        }
+
+        // FETCH LIVE CURRENT WEATHER TELEMETRY
         const weatherUrl = (lat !== undefined && lon !== undefined)
             ? `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
-            : `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(queryLocation)}&units=metric&appid=${apiKey}`;
+            : `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cleanLocation)},IN&units=metric&appid=${apiKey}`;
 
-        const weatherAPI = await axios.get(weatherUrl);
+        // FETCH 5-DAY / 3-HOUR LIVE FORECAST STREAM
+        const forecastUrl = (lat !== undefined && lon !== undefined)
+            ? `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
+            : `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cleanLocation)},IN&units=metric&appid=${apiKey}`;
+
+        const [weatherAPI, forecastAPI] = await Promise.all([
+            axios.get(weatherUrl),
+            axios.get(forecastUrl).catch(() => null) // Graceful fallback if forecast fails
+        ]);
 
         const temp = weatherAPI.data.main.temp;
+        const feelsLike = weatherAPI.data.main.feels_like;
         const humidity = weatherAPI.data.main.humidity;
-        const cityName = resolvedName || weatherAPI.data.name;
-        
+        const windSpeed = weatherAPI.data.wind.speed;
+        const weatherDesc = weatherAPI.data.weather[0]?.description || 'Clear sky';
+        const weatherIcon = weatherAPI.data.weather[0]?.icon || '01d';
+        const cityName = displayName || weatherAPI.data.name;
+
+        // Process 5-day forecast summaries
+        let forecastList = [];
+        if (forecastAPI && forecastAPI.data && forecastAPI.data.list) {
+            forecastList = forecastAPI.data.list.slice(0, 8).map(item => ({
+                time: item.dt_txt,
+                temp: item.main.temp,
+                humidity: item.main.humidity,
+                description: item.weather[0]?.description,
+                icon: item.weather[0]?.icon
+            }));
+        }
+
+        // Spoilage & Agro-Risk Scoring Logic
         let riskLevel = 'stable';
         let riskScore = 20;
         let recommendation = 'Standard Monitoring. Conditions optimal for asset storage.';
@@ -275,27 +324,30 @@ app.post('/api/climate/risk-matrix', async (req, res) => {
             riskScore = 55;
             recommendation = 'Monitor closely. Elevated ambient heat and moisture detected.';
         }
-        
-        return res.json({ 
-            success: true, 
-            temp, 
-            humidity, 
-            score: riskScore,
-            riskLevel: riskLevel,
-            location: cityName,
-            recommendation: recommendation,
-            message: riskLevel !== 'stable' 
-                ? `⚠️ Regional Agro-Climate Alert: Spoilage risks flagged for ${cityName}. Review storage telemetry.` 
-                : `✅ Climate conditions at ${cityName} within safe parameters.`
-        });
-    } catch (e) {
-        // Detailed error logging in Render console
-        console.error("OpenWeather API Error Details:", e.response?.data || e.message);
 
-        const apiMessage = e.response?.data?.message || "Location telemetry lookup failed.";
-        return res.status(e.response?.status || 500).json({ 
-            success: false, 
-            message: `Telemetry lookup failed: ${apiMessage}. Check spelling or add state details (e.g., "${cleanLocation}, AP").`
+        return res.json({
+            success: true,
+            temp,
+            feelsLike,
+            humidity,
+            windSpeed,
+            condition: weatherDesc,
+            icon: `https://openweathermap.org/img/wn/${weatherIcon}@2x.png`,
+            score: riskScore,
+            riskLevel,
+            location: cityName,
+            recommendation,
+            forecast: forecastList,
+            message: riskLevel !== 'stable'
+                ? `⚠️ Agro-Climate Alert for ${cityName}: Spoilage risk flagged.`
+                : `✅ Safe Parameters at ${cityName}.`
+        });
+
+    } catch (e) {
+        console.error("OpenWeather API Error Details:", e.response?.data || e.message);
+        return res.status(500).json({
+            success: false,
+            message: `Could not retrieve weather for "${cleanLocation}". Try searching with a nearby town or PIN code.`
         });
     }
 });
